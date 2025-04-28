@@ -131,6 +131,90 @@ inductive BSOS: State → Program → State → Prop
       ¬(evalC c s) →
       BSOS s (Program.whilee c body) s
 
+theorem unloop(prog: Program):
+  ∀ sStart sFin: State, (BSOS sStart prog sFin) →
+                        (∃ progNLP: Program, BSOS sStart progNLP sFin ∧ noLoop progNLP) := by
+  intro sStart sFin
+  intro BSOS1
+  induction BSOS1 with
+  | while_true cond prog1 s1 s2 s3 condVal tr1 tr2Raw ih1 ih2 =>
+
+    let prog2:Program := (Program.whilee cond prog1)
+    have tr2 : BSOS s2 prog2 s3 := by
+      simp [prog2]
+      apply tr2Raw
+    clear tr2Raw
+
+    let ⟨progNLP1, propProgNLP1⟩ := ih1
+    let ⟨progNLP2, propProgNLP2⟩ := ih2
+    clear ih1 ih2
+
+    exists (Program.seq progNLP1 progNLP2)
+
+    apply And.intro
+    {
+      apply BSOS.seq progNLP1 progNLP2 s1 s2 s3
+      apply And.left
+      apply propProgNLP1
+      apply And.left
+      apply propProgNLP2
+    }
+    {
+      rw [noLoop]
+      apply And.intro
+      apply And.right
+      apply propProgNLP1
+      apply And.right
+      apply propProgNLP2
+    }
+  | while_false =>
+    exists Program.skip
+    apply And.intro
+    apply BSOS.skip
+    simp [noLoop]
+  | skip =>
+    exists Program.skip
+    apply And.intro
+    apply BSOS.skip
+    simp [noLoop]
+  | assign name expr =>
+    exists (Program.assign name expr)
+    apply And.intro
+    apply BSOS.assign
+    simp [noLoop]
+  | seq p1 p2 s1 s2 s3 tr1 tr2 ih1 ih2 =>
+
+    let ⟨progNLP1, propProgNLP1⟩ := ih1
+    let ⟨progNLP2, propProgNLP2⟩ := ih2
+    clear ih1 ih2
+
+    exists (Program.seq progNLP1 progNLP2)
+
+    apply And.intro
+    {
+      apply BSOS.seq progNLP1 progNLP2 s1 s2 s3
+      apply And.left
+      apply propProgNLP1
+      apply And.left
+      apply propProgNLP2
+    }
+    {
+      simp [noLoop]
+      apply And.intro
+      apply And.right
+      apply propProgNLP1
+      apply And.right
+      apply propProgNLP2
+    }
+  | if_true cond progt progf s1 s2 condVal trt ih =>
+    let ⟨progNLPt, propProgNLPt⟩ := ih
+    clear ih
+    exists progNLPt
+  | if_false cond progt progf s1 s2 condVal trt ih =>
+    let ⟨progNLPf, propProgNLPf⟩ := ih
+    clear ih
+    exists progNLPf
+
 theorem determenistic(prog: Program):
   ∀sStart sFin1 sFin2:State, (noLoop prog) → (BSOS sStart prog sFin1) → (BSOS sStart prog sFin2) → (sFin1 = sFin2) := by
   induction prog with
