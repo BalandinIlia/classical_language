@@ -1,0 +1,14 @@
+name = "classical_language"
+version = "0.1.0"
+defaultTargets = ["classical_language"]
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+
+[[lean_lib]]
+name = "ClassicalLanguage"
+
+[[lean_exe]]
+name = "classical_language"
+root = "Main"

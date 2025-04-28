@@ -1,0 +1,321 @@
+import Mathlib.Data.Nat.Basic
+import Aesop
+
+def State := String → ℤ
+
+def replS: State → String → ℤ → State
+| st, name, val => (fun s:String => if(s==name) then val else st s)
+
+inductive Expr
+| num: ℤ → Expr
+| var: String → Expr
+| sum: Expr → Expr → Expr
+| dif: Expr → Expr → Expr
+| mul: Expr → Expr → Expr
+
+def evalE: Expr → State → ℤ
+| (Expr.num n), _        =>   n
+| (Expr.var s), st       =>   st s
+| (Expr.sum e1 e2), st   =>   (evalE e1 st) + (evalE e2 st)
+| (Expr.dif e1 e2), st   =>   (evalE e1 st) - (evalE e2 st)
+| (Expr.mul e1 e2), st   =>   (evalE e1 st) * (evalE e2 st)
+
+def replE: Expr → String → Expr → Expr
+| (Expr.num n), _, _             =>   Expr.num n
+| (Expr.var s), name, eSub       =>   if (s==name) then eSub else (Expr.var s)
+| (Expr.sum e1 e2), name, eSub   =>   Expr.sum (replE e1 name eSub) (replE e2 name eSub)
+| (Expr.dif e1 e2), name, eSub   =>   Expr.dif (replE e1 name eSub) (replE e2 name eSub)
+| (Expr.mul e1 e2), name, eSub   =>   Expr.mul (replE e1 name eSub) (replE e2 name eSub)
+
+lemma exprReplacement(expr: Expr)(name: String)(eSub: Expr):
+  ∀s:State, (evalE (replE expr name eSub) s) = (evalE expr (replS s name (evalE eSub s))) := by
+  intro s
+  induction expr with
+  | num =>
+    simp [evalE, replE, replS]
+  | var name2 =>
+    simp [evalE, replE, replS]
+    cases eq : (name2==name)
+    case true =>
+      aesop
+    case false =>
+      have neq:¬(name2 = name) := by
+        aesop
+      simp [neq]
+      simp [evalE]
+  | sum e1 e2 ih1 ih2 =>
+    simp [evalE, replE, replS, ih1, ih2]
+  | dif e1 e2 ih1 ih2 =>
+    simp [evalE, replE, replS, ih1, ih2]
+  | mul e1 e2 ih1 ih2 =>
+    simp [evalE, replE, replS, ih1, ih2]
+
+inductive Cond
+| truee: Cond
+| falsee: Cond
+| eq: Expr → Expr → Cond
+| not: Cond → Cond
+| and: Cond → Cond → Cond
+| or: Cond → Cond → Cond
+
+def evalC: Cond → State → Bool
+| Cond.truee, _          =>   true
+| Cond.falsee, _         =>   false
+| (Cond.eq e1 e2), st    =>   (evalE e1 st) == (evalE e2 st)
+| (Cond.not c), st       =>   not (evalC c st)
+| (Cond.and c1 c2), st   =>   and (evalC c1 st) (evalC c2 st)
+| (Cond.or c1 c2), st    =>   or (evalC c1 st) (evalC c2 st)
+
+def replC: Cond → String → Expr → Cond
+| Cond.truee, _, _               =>   Cond.truee
+| Cond.falsee, _, _              =>   Cond.falsee
+| (Cond.eq e1 e2), name, eSub    =>   Cond.eq (replE e1 name eSub) (replE e2 name eSub)
+| (Cond.not c), name, eSub       =>   Cond.not (replC c name eSub)
+| (Cond.and c1 c2), name, eSub   =>   Cond.and (replC c1 name eSub) (replC c2 name eSub)
+| (Cond.or c1 c2), name, eSub    =>   Cond.or (replC c1 name eSub) (replC c2 name eSub)
+
+lemma condReplacement(cond: Cond)(name: String)(eSub: Expr):
+  ∀s:State, (evalC (replC cond name eSub) s) = (evalC cond (replS s name (evalE eSub s))) := by
+  intro s
+  induction cond with
+  | truee =>
+    simp [evalC, replC, replE, evalE]
+  | falsee =>
+    simp [evalC, replC, replE, evalE]
+  | eq e1 e2 =>
+    simp [evalC, replC, replE, evalE, replS, exprReplacement]
+  | not c ih =>
+    simp [evalC, replC, replE, evalE, replS, exprReplacement, ih]
+  | and c1 c2 ih1 ih2 =>
+    simp [evalC, replC, replE, evalE, replS, exprReplacement, ih1, ih2]
+  | or c1 c2 ih1 ih2 =>
+    simp [evalC, replC, replE, evalE, replS, exprReplacement, ih1, ih2]
+
+inductive Program
+| skip: Program
+| assign: String → Expr → Program
+| seq: Program → Program → Program
+| iff: Cond → Program → Program → Program
+| whilee: Cond → Program → Program
+
+def noLoop: Program → Prop
+| Program.skip          =>   true
+| Program.assign _ _    =>   true
+| Program.seq p1 p2     =>   (noLoop p1) ∧ (noLoop p2)
+| Program.iff _ p1 p2   =>   (noLoop p1) ∧ (noLoop p2)
+| Program.whilee _ _    =>   false
+
+inductive BSOS: State → Program → State → Prop
+| skip(s:State):
+      BSOS s Program.skip s
+| assign(name: String)(expr: Expr)(s:State):
+      BSOS s (Program.assign name expr) (replS s name (evalE expr s))
+| seq(p1 p2: Program)(s1 s2 s3: State):
+      BSOS s1 p1 s2 →
+      BSOS s2 p2 s3 →
+      BSOS s1 (Program.seq p1 p2) s3
+| if_true(c: Cond)(pt pf: Program)(s1 s2: State):
+      evalC c s1 →
+      BSOS s1 pt s2 →
+      BSOS s1 (Program.iff c pt pf) s2
+| if_false(c: Cond)(pt pf: Program)(s1 s2: State):
+      ¬(evalC c s1) →
+      BSOS s1 pf s2 →
+      BSOS s1 (Program.iff c pt pf) s2
+| while_true(c: Cond)(body: Program)(s1 s2 s3: State):
+      evalC c s1 →
+      BSOS s1 body s2 →
+      BSOS s2 (Program.whilee c body) s3 →
+      BSOS s1 (Program.whilee c body) s3
+| while_false(c: Cond)(body: Program)(s: State):
+      ¬(evalC c s) →
+      BSOS s (Program.whilee c body) s
+
+theorem determenistic(prog: Program):
+  ∀sStart sFin1 sFin2:State, (noLoop prog) → (BSOS sStart prog sFin1) → (BSOS sStart prog sFin2) → (sFin1 = sFin2) := by
+  induction prog with
+  | skip =>
+    intro sStart
+    intro sFin1
+    intro sFin2
+    intro
+    intro h1
+    intro h2
+    cases h1
+    cases h2
+    simp
+  | assign name expr =>
+    intro sStart
+    intro sFin1
+    intro sFin2
+    intro
+    intro h1
+    intro h2
+    cases h1
+    cases h2
+    simp
+  | seq p1 p2 determen1 determen2 =>
+    intro sStart
+    intro sFinVariant1
+    intro sFinVariant2
+
+    intro nlp
+    have nlp1 : noLoop p1 := by
+      apply And.left
+      apply nlp
+    have nlp2 : noLoop p2 := by
+      apply And.right
+      apply nlp
+    clear nlp
+
+    intro h1
+    cases h1
+    case seq sIntermed1 tr1_1 tr1_2 =>
+    intro h2
+    cases h2
+    case seq sIntermed2 tr2_1 tr2_2 =>
+    have intereq: sIntermed1 = sIntermed2 := by
+      apply determen1 sStart
+      apply nlp1
+      apply tr1_1
+      apply tr2_1
+    clear determen1
+    clear tr1_1
+    clear tr2_1
+    apply determen2 sIntermed1
+    apply nlp2
+    apply tr1_2
+    rw [intereq]
+    apply tr2_2
+  | iff cond pt pf detpt detpf =>
+    intro sStart
+    intro sFinV1
+    intro sFinV2
+
+    intro nlp
+    have nlpt : noLoop pt := by
+      apply And.left
+      apply nlp
+    have nlpf : noLoop pf := by
+      apply And.right
+      apply nlp
+    clear nlp
+
+    intro h1
+    intro h2
+    cases h1
+    case if_true condVal1 tr1t =>
+      cases h2
+      case if_true condVal2 tr2t =>
+        clear condVal2
+        apply detpt sStart
+        apply nlpt
+        apply tr1t
+        apply tr2t
+      case if_false condVal2 tr2f =>
+        clear tr1t tr2f detpt detpf
+        apply False.elim
+        contradiction
+    case if_false condVal1 tr1f =>
+      cases h2
+      case if_true condVal2 tr2t =>
+        clear detpt detpf
+        apply False.elim
+        contradiction
+      case if_false condVal2 tr2f =>
+        apply detpf sStart
+        apply nlpf
+        apply tr1f
+        apply tr2f
+  | whilee c body ih =>
+    simp [noLoop]
+
+theorem terminates(prog: Program):
+  ∀sStart, (noLoop prog) → (∃sFin: State, BSOS sStart prog sFin) := by
+  induction prog with
+  | skip =>
+    intro sStart
+    intro nlp
+    exists sStart
+    apply BSOS.skip
+  | assign name expr =>
+    intro sStart
+    intro nlp
+    clear nlp
+    exists (replS sStart name (evalE expr sStart))
+    apply BSOS.assign
+  | seq p1 p2 ih1 ih2 =>
+    intro sStart
+
+    intro nlp
+    have nlp1 : noLoop p1 := by
+      apply And.left
+      apply nlp
+    have nlp2 : noLoop p2 := by
+      apply And.right
+      apply nlp
+    clear nlp
+
+    have termp1: ∃ sFin, BSOS sStart p1 sFin := by
+      apply ih1
+      apply nlp1
+    clear ih1
+    clear nlp1
+    let ⟨sInter, exsInter⟩ := termp1
+    clear termp1
+
+    have termp2: ∃ sFin, BSOS sInter p2 sFin := by
+      apply ih2
+      apply nlp2
+    clear ih2
+    clear nlp2
+    let ⟨sFinal, exsFinal⟩ := termp2
+    clear termp2
+
+    exists sFinal
+    apply BSOS.seq p1 p2 sStart sInter sFinal
+    apply exsInter
+    apply exsFinal
+  | iff cond pt pf termpt termpf =>
+    intro sStart
+
+    intro nlp
+    have nlpt : noLoop pt := by
+      apply And.left
+      apply nlp
+    have nlpf : noLoop pf := by
+      apply And.right
+      apply nlp
+    clear nlp
+
+    have lemt: ∃ sFint, BSOS sStart pt sFint := by
+      apply termpt
+      apply nlpt
+    clear termpt
+    clear nlpt
+    let ⟨sFint, exsFint⟩ := lemt
+    clear lemt
+
+    have lemf: ∃ sFinf, BSOS sStart pf sFinf := by
+      apply termpf
+      apply nlpf
+    clear termpf
+    clear nlpf
+    let ⟨sFinf, exsFinf⟩ := lemf
+    clear lemf
+
+    cases condVal: (evalC cond sStart)
+    case true =>
+      exists sFint
+      apply BSOS.if_true
+      apply condVal
+      apply exsFint
+    case false =>
+      exists sFinf
+      apply BSOS.if_false
+      simp
+      apply condVal
+      apply exsFinf
+
+  | whilee c body ih =>
+    simp [noLoop]
