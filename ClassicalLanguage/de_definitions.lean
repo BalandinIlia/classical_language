@@ -372,3 +372,27 @@ theorem hoareIf(P Q: Cond)(cond: Cond)(pt pf: Program):
     apply hoaref sStart
     apply preCond
     apply transf
+
+theorem hoareWhile(Q: Cond)(cond: Cond)(body: Program):
+  hoare Q body Q → hoare Q (Program.whilee cond body) (Cond.and Q (Cond.not cond)) := by
+  intro hoareBody
+  rw [hoare]
+  intro sStart sFin
+  intro preCond
+  intro trans
+  cases trans
+  case while_true sInter condVal trans1 trans2 =>
+    rw [evalC]
+    simp
+    apply And.intro
+    sorry
+    sorry
+  case while_false condVal =>
+    rw [evalC]
+    simp
+    apply And.intro
+    apply preCond
+    rw [evalC]
+    simp
+    clear preCond hoareBody body Q
+    aesop
