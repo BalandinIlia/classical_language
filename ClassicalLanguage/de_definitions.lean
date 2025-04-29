@@ -131,6 +131,90 @@ inductive BSOS: State → Program → State → Prop
       ¬(evalC c s) →
       BSOS s (Program.whilee c body) s
 
+theorem unloop(prog: Program):
+  ∀ sStart sFin: State, (BSOS sStart prog sFin) →
+                        (∃ progNLP: Program, BSOS sStart progNLP sFin ∧ noLoop progNLP) := by
+  intro sStart sFin
+  intro BSOS1
+  induction BSOS1 with
+  | while_true cond prog1 s1 s2 s3 condVal tr1 tr2Raw ih1 ih2 =>
+
+    let prog2:Program := (Program.whilee cond prog1)
+    have tr2 : BSOS s2 prog2 s3 := by
+      simp [prog2]
+      apply tr2Raw
+    clear tr2Raw
+
+    let ⟨progNLP1, propProgNLP1⟩ := ih1
+    let ⟨progNLP2, propProgNLP2⟩ := ih2
+    clear ih1 ih2
+
+    exists (Program.seq progNLP1 progNLP2)
+
+    apply And.intro
+    {
+      apply BSOS.seq progNLP1 progNLP2 s1 s2 s3
+      apply And.left
+      apply propProgNLP1
+      apply And.left
+      apply propProgNLP2
+    }
+    {
+      rw [noLoop]
+      apply And.intro
+      apply And.right
+      apply propProgNLP1
+      apply And.right
+      apply propProgNLP2
+    }
+  | while_false =>
+    exists Program.skip
+    apply And.intro
+    apply BSOS.skip
+    simp [noLoop]
+  | skip =>
+    exists Program.skip
+    apply And.intro
+    apply BSOS.skip
+    simp [noLoop]
+  | assign name expr =>
+    exists (Program.assign name expr)
+    apply And.intro
+    apply BSOS.assign
+    simp [noLoop]
+  | seq p1 p2 s1 s2 s3 tr1 tr2 ih1 ih2 =>
+
+    let ⟨progNLP1, propProgNLP1⟩ := ih1
+    let ⟨progNLP2, propProgNLP2⟩ := ih2
+    clear ih1 ih2
+
+    exists (Program.seq progNLP1 progNLP2)
+
+    apply And.intro
+    {
+      apply BSOS.seq progNLP1 progNLP2 s1 s2 s3
+      apply And.left
+      apply propProgNLP1
+      apply And.left
+      apply propProgNLP2
+    }
+    {
+      simp [noLoop]
+      apply And.intro
+      apply And.right
+      apply propProgNLP1
+      apply And.right
+      apply propProgNLP2
+    }
+  | if_true cond progt progf s1 s2 condVal trt ih =>
+    let ⟨progNLPt, propProgNLPt⟩ := ih
+    clear ih
+    exists progNLPt
+  | if_false cond progt progf s1 s2 condVal trt ih =>
+    let ⟨progNLPf, propProgNLPf⟩ := ih
+    clear ih
+    exists progNLPf
+
 theorem determenistic(prog: Program):
   ∀sStart sFin1 sFin2:State, (noLoop prog) → (BSOS sStart prog sFin1) → (BSOS sStart prog sFin2) → (sFin1 = sFin2) := by
   induction prog with
@@ -319,3 +403,80 @@ theorem terminates(prog: Program):
 
   | whilee c body ih =>
     simp [noLoop]
+
+-- HOARE LOGIC
+
+def hoare(P: Cond)(prog: Program)(Q: Cond): Prop := 
+    ∀sStart sFin: State, evalC P sStart → BSOS sStart prog sFin → evalC Q sFin
+
+theorem hoareSeq(P R Q: Cond)(p1 p2: Program):
+  ((hoare P p1 R) → (hoare R p2 Q) → (hoare P (Program.seq p1 p2) Q)) := by
+  intro hoare1
+  intro hoare2
+
+  rw [hoare]
+  intro sStart
+  intro sFin
+  intro preCond
+  intro trans
+
+  cases trans
+  case seq sInter trans1 trans2 =>
+    apply hoare2 sInter sFin
+    apply hoare1 sStart sInter
+    apply preCond
+    apply trans1
+    apply trans2
+
+theorem hoareAssign(name: String)(expr: Expr)(Q: Cond):
+  hoare (replC Q name expr) (Program.assign name expr) Q := by
+  rw [hoare]
+  intro sStart sFin
+  rw [condReplacement]
+  intro precond
+  intro trans
+  cases trans
+  case assign =>
+    apply precond
+
+theorem hoareIf(P Q: Cond)(cond: Cond)(pt pf: Program):
+  hoare P pt Q → hoare P pf Q → hoare P (Program.iff cond pt pf) Q := by
+  intro hoaret
+  intro hoaref
+  rw [hoare]
+  intro sStart sFin
+  intro preCond
+  intro trans
+  cases trans
+  case if_true condVal transt =>
+    apply hoaret sStart
+    apply preCond
+    apply transt
+  case if_false condVal transf =>
+    apply hoaref sStart
+    apply preCond
+    apply transf
+
+theorem hoareWhile(Q: Cond)(cond: Cond)(body: Program):
+  hoare Q body Q → hoare Q (Program.whilee cond body) (Cond.and Q (Cond.not cond)) := by
+  intro hoareBody
+  rw [hoare]
+  intro sStart sFin
+  intro preCond
+  intro trans
+  cases trans
+  case while_true sInter condVal trans1 trans2 =>
+    rw [evalC]
+    simp
+    apply And.intro
+    sorry
+    sorry
+  case while_false condVal =>
+    rw [evalC]
+    simp
+    apply And.intro
+    apply preCond
+    rw [evalC]
+    simp
+    clear preCond hoareBody body Q
+    aesop
