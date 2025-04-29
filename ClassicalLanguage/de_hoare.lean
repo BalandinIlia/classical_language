@@ -143,19 +143,17 @@ def invar:Cond := Cond.less (Expr.var "j") (Expr.var "i")
 theorem example1: hoare invar cycle invar := by
   apply strnegthPostCond (Cond.and invar (Cond.not (less100 "i")))
   {
-    rw [fol]
-    intro s
-    rw [evalC]
+    simp [fol, evalC, invar, evalE, less100, State]
     aesop
   }
   apply hoareWhile
+
   let condInter:Cond := Cond.less (Expr.sum (Expr.var "j") (Expr.num 1)) (Expr.var "i")
+
   apply hoareSeq invar condInter invar
   {
-    have eq: fol invar (replC condInter "i" (Expr.sum (Expr.var "i") (Expr.num 1))) := by
-      simp [replC, condInter, Expr.var, invar, replE, evalC, evalE, fol]
     apply weakenPreCond (replC condInter "i" (Expr.sum (Expr.var "i") (Expr.num 1)))
-    apply eq
+    simp [replC, condInter, Expr.var, invar, replE, evalC, evalE, fol]
     apply hoareAssign "i" (Expr.sum (Expr.var "i") (Expr.num 1)) condInter
   }
   {
