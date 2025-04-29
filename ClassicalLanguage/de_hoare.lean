@@ -6,6 +6,28 @@ import ClassicalLanguage.de_BSOS
 def hoare(P: Cond)(prog: Program)(Q: Cond): Prop :=
     ∀sStart sFin: State, evalC P sStart → BSOS sStart prog sFin → evalC Q sFin
 
+theorem hoareSkip(P: Cond): hoare P Program.skip P := by
+  rw [hoare]
+  intro sStart sFin
+  intro preCond
+  intro trans
+  have eq: sFin = sStart := by
+    cases trans
+    simp
+  simp [eq]
+  apply preCond
+
+theorem hoareAssign(name: String)(expr: Expr)(Q: Cond):
+  hoare (replC Q name expr) (Program.assign name expr) Q := by
+  rw [hoare]
+  intro sStart sFin
+  rw [condReplacement]
+  intro precond
+  intro trans
+  cases trans
+  case assign =>
+    apply precond
+
 theorem hoareSeq(P R Q: Cond)(p1 p2: Program):
   ((hoare P p1 R) → (hoare R p2 Q) → (hoare P (Program.seq p1 p2) Q)) := by
   intro hoare1
