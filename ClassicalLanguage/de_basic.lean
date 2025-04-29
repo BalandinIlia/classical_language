@@ -53,7 +53,7 @@ lemma exprReplacement(expr: Expr)(name: String)(eSub: Expr):
 inductive Cond
 | truee: Cond
 | falsee: Cond
-| eq: Expr → Expr → Cond
+| less: Expr → Expr → Cond
 | not: Cond → Cond
 | and: Cond → Cond → Cond
 | or: Cond → Cond → Cond
@@ -61,7 +61,7 @@ inductive Cond
 def evalC: Cond → State → Bool
 | Cond.truee, _          =>   true
 | Cond.falsee, _         =>   false
-| (Cond.eq e1 e2), st    =>   (evalE e1 st) == (evalE e2 st)
+| (Cond.less e1 e2), st    =>   (evalE e1 st) < (evalE e2 st)
 | (Cond.not c), st       =>   not (evalC c st)
 | (Cond.and c1 c2), st   =>   and (evalC c1 st) (evalC c2 st)
 | (Cond.or c1 c2), st    =>   or (evalC c1 st) (evalC c2 st)
@@ -69,7 +69,7 @@ def evalC: Cond → State → Bool
 def replC: Cond → String → Expr → Cond
 | Cond.truee, _, _               =>   Cond.truee
 | Cond.falsee, _, _              =>   Cond.falsee
-| (Cond.eq e1 e2), name, eSub    =>   Cond.eq (replE e1 name eSub) (replE e2 name eSub)
+| (Cond.less e1 e2), name, eSub  =>   Cond.less (replE e1 name eSub) (replE e2 name eSub)
 | (Cond.not c), name, eSub       =>   Cond.not (replC c name eSub)
 | (Cond.and c1 c2), name, eSub   =>   Cond.and (replC c1 name eSub) (replC c2 name eSub)
 | (Cond.or c1 c2), name, eSub    =>   Cond.or (replC c1 name eSub) (replC c2 name eSub)
@@ -82,7 +82,7 @@ lemma condReplacement(cond: Cond)(name: String)(eSub: Expr):
     simp [evalC, replC, replE, evalE]
   | falsee =>
     simp [evalC, replC, replE, evalE]
-  | eq e1 e2 =>
+  | less e1 e2 =>
     simp [evalC, replC, replE, evalE, replS, exprReplacement]
   | not c ih =>
     simp [evalC, replC, replE, evalE, replS, exprReplacement, ih]
