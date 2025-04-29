@@ -91,6 +91,8 @@ lemma condReplacement(cond: Cond)(name: String)(eSub: Expr):
   | or c1 c2 ih1 ih2 =>
     simp [evalC, replC, replE, evalE, replS, exprReplacement, ih1, ih2]
 
+def fol(c1: Cond)(c2: Cond): Prop := ∀s:State, (evalC c1 s) → (evalC c2 s)
+
 inductive Program
 | skip: Program
 | assign: String → Expr → Program
