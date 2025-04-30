@@ -46,13 +46,103 @@ inductive TransClos: Conf → Conf → Prop
 
 def results(init: Conf)(s: State):Prop := TransClos init (Conf.mk s Program.skip Program.skip)
 
-def exampl:Conf := Conf.mk
-                    (fun _:String => 0)
-                    (Program.assign "a" (Expr.num 1))
-                    (Program.assign "a" (Expr.num 2))
+def stateAB: ℤ → ℤ → State
+| a, b => (fun s:String => if(s="a") then a else if (s="b") then b else 0)
 
-theorem th1: results exampl (fun s:String => if (s="a") then 1 else 0) := by
-      sorry
+def p1:Program := Program.assign "a" (Expr.num 1)
 
-theorem th2: results exampl (fun s:String => if (s="a") then 2 else 0) := by
-      sorry
+def p2:Program := (Program.iff
+                             (Cond.less (Expr.var "a") (Expr.num 1))
+                             (Program.assign "b" (Expr.num 1))
+                             (Program.assign "b" (Expr.num 2))
+                  )
+
+def exampl:Conf := Conf.mk (stateAB 0 0) p1 p2
+
+theorem th1: results exampl (stateAB 1 1) := by
+      let conf1:Conf := exampl
+      let conf2:Conf := Conf.mk (stateAB 0 0) p1 (Program.assign "b" (Expr.num 1))
+      let conf3:Conf := Conf.mk (stateAB 1 0) Program.skip (Program.assign "b" (Expr.num 1))
+      let conf4:Conf := Conf.mk (stateAB 1 1) Program.skip Program.skip
+
+      rw [results]
+      have eq1: exampl = conf1 := by
+            aesop
+      have eq2: Conf.mk (stateAB 1 1) Program.skip Program.skip = conf4 := by
+            aesop
+      rw [eq1, eq2]
+      clear eq1 eq2
+
+      apply TransClos.sevStep conf1 conf3 conf4
+      apply TransClos.sevStep conf1 conf2 conf3
+
+      apply TransClos.oneStep
+      apply TransS.right
+      apply SSOS.if_true
+      simp [evalC, evalE, stateAB]
+
+      apply TransClos.oneStep
+      apply TransS.left
+      rw [p1]
+      have repl1: stateAB 1 0 = replS (stateAB 0 0) "a" 1 := by
+            simp [replS, stateAB]
+      rw [repl1]
+      clear repl1
+      apply SSOS.assign
+
+      apply TransClos.oneStep
+      apply TransS.right
+      have repl2: stateAB 1 1 = replS (stateAB 1 0) "b" 1 := by
+            simp [replS, stateAB]
+      rw [repl2]
+      clear repl2
+      apply SSOS.assign
+
+theorem th2: results exampl (stateAB 1 2) := by
+      let conf1:Conf := exampl
+      let conf2:Conf := Conf.mk (stateAB 1 0) Program.skip p2
+      let conf3:Conf := Conf.mk (stateAB 1 0) Program.skip (Program.assign "b" (Expr.num 2))
+      let conf4:Conf := Conf.mk (stateAB 1 2) Program.skip Program.skip
+
+      rw [results]
+      have eq1: exampl = conf1 := by
+            aesop
+      have eq2: Conf.mk (stateAB 1 2) Program.skip Program.skip = conf4 := by
+            aesop
+      rw [eq1, eq2]
+      clear eq1 eq2
+
+      apply TransClos.sevStep conf1 conf3 conf4
+      apply TransClos.sevStep conf1 conf2 conf3
+
+      apply TransClos.oneStep
+      apply TransS.left
+      rw [p1]
+      have repl1: stateAB 1 0 = replS (stateAB 0 0) "a" 1 := by
+            simp [replS, stateAB]
+      rw [repl1]
+      clear repl1
+      apply SSOS.assign
+
+      apply TransClos.oneStep
+      apply TransS.right
+      rw [p2]
+      apply SSOS.if_false
+      simp [evalC, evalE, stateAB]
+
+      apply TransClos.oneStep
+      apply TransS.right
+      have repl2: stateAB 1 2 = replS (stateAB 1 0) "b" 2 := by
+            simp [replS, stateAB]
+            clear conf1 conf2 conf3 conf4
+            funext s
+            cases eq1:s=="a"
+            case true =>
+                  simp [] at eq1
+                  simp [eq1]
+            case false =>
+                  simp [] at eq1
+                  simp [eq1]
+      rw [repl2]
+      clear repl2
+      apply SSOS.assign
