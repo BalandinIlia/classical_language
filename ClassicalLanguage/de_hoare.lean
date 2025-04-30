@@ -101,22 +101,76 @@ theorem hoareWhile(Q: Cond)(cond: Cond)(body: Program):
   intro sStart sFin
   intro preCond
   intro trans
-  cases trans
-  case while_true sInter condVal trans1 trans2 =>
-    rw [evalC]
-    simp
-    apply And.intro
-    sorry
-    sorry
-  case while_false condVal =>
-    rw [evalC]
-    simp
-    apply And.intro
+  generalize hprog: (Program.whilee cond body) = prog
+  rw [hprog] at trans
+  rw [evalC]
+  simp
+  apply And.intro
+  {
+    have df: (prog = Program.whilee cond body) → (hoare Q body Q) → (evalC Q sStart = true) → (evalC Q sFin = true) := by
+      induction trans with
+      | while_true iCond iBody s1 s2 s3 valICond tr1 tr2 ih1 ih2 =>
+        intro h1 h2 h3
+        rw [h1] at hprog
+        have eq: body = iBody := by
+          aesop
+        apply ih2
+        apply hoareBody
+        apply h3
+        rw [eq]
+        apply tr1
+        rw [Eq.comm]
+        apply h1
+        apply h1
+        apply hoareBody
+        apply hoareBody s1 s2
+        apply preCond
+        have eq2: iBody = body := by
+          rw [Eq.comm]
+          apply eq
+        rw [eq]
+        apply tr1
+      | while_false iCond iBody s1 s2 =>
+        intro h1 h2 h3
+        apply h3
+      | skip =>
+        aesop
+      | assign =>
+        aesop
+      | seq p1 p2 s1 s2 s3 tr1 tr2 ih1 ih2 =>
+        apply False.elim
+        aesop
+      | if_true =>
+        apply False.elim
+        aesop
+      | if_false =>
+        apply False.elim
+        aesop
+    apply df
+    rw [Eq.comm]
+    apply hprog
+    apply hoareBody
     apply preCond
+  }
+  {
     rw [evalC]
     simp
-    clear preCond hoareBody body Q
-    aesop
+    induction trans with
+    | while_true =>
+      aesop
+    | while_false =>
+      aesop
+    | skip =>
+      aesop
+    | assign =>
+      aesop
+    | seq =>
+      aesop
+    | if_true =>
+      aesop
+    | if_false =>
+      aesop
+  }
 
 -- Example
 
