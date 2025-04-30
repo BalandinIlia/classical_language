@@ -43,3 +43,16 @@ inductive TransClos: Conf → Conf → Prop
       TransClos c1 cInter →
       TransClos cInter c2 →
       TransClos c1 c2
+
+def results(init: Conf)(s: State):Prop := TransClos init (Conf.mk s Program.skip Program.skip)
+
+def exampl:Conf := Conf.mk
+                    (fun _:String => 0)
+                    (Program.assign "a" (Expr.num 1))
+                    (Program.assign "a" (Expr.num 2))
+
+theorem th1: results exampl (fun s:String => if (s="a") then 1 else 0) := by
+      sorry
+
+theorem th2: results exampl (fun s:String => if (s="a") then 2 else 0) := by
+      sorry
