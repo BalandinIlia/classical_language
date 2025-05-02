@@ -94,63 +94,67 @@ theorem hoareIf(P Q: Cond)(cond: Cond)(pt pf: Program):
     apply preCond
     apply transf
 
-lemma gh (prog: Program)(Q: Cond)
-  (razl: ∃c:Cond, ∃b:Program, prog = Program.whilee c b ∧ hoare Q b Q):
+lemma transInv(prog: Program)(Q: Cond)
+  (decom: ∃c:Cond, ∃b:Program, prog = Program.whilee c b ∧ hoare Q b Q):
   ∀sStart sFin: State, (BSOS sStart prog sFin) → (evalC Q sStart = true) → (evalC Q sFin = true) := by
   intro sStart sFin
   intro trans
-  revert razl
+  revert decom
+  revert Q
 
   induction trans with
   | while_true cond body s1 s2 s3 valCond tr1 tr2 ih1 ih2 =>
+    intro Q
     clear prog
     clear sStart sFin
     clear ih1 tr2
 
-    intro razl
-    let ⟨c, b, hoareBody⟩ := razl
+    intro decom
+    let ⟨c, b, hoareBody⟩ := decom
     have eq1: c = cond := by
       aesop
     have eq2: b = body := by
       aesop
     rw [eq1, eq2] at hoareBody
     simp at hoareBody
-    clear razl c b eq1 eq2
+    clear c b eq1 eq2
 
     intro preCond
     apply ih2
-    {
-      exists cond
-      exists body
-    }
+    apply decom
     {
       apply hoareBody s1 s2
       apply preCond
       apply tr1
     }
   | while_false =>
-      simp
+    simp
   | skip s =>
+    intro Q
     clear prog sStart sFin
     intro razl
     apply False.elim
     clear s
     aesop
   | assign a b c =>
+    intro Q
     clear prog sStart sFin
     intro razl
     apply False.elim
     clear c
     aesop
   | seq =>
+    intro Q
     intro razl
     apply False.elim
     aesop
   | if_true =>
+    intro Q
     intro razl
     apply False.elim
     aesop
   | if_false =>
+    intro Q
     intro razl
     apply False.elim
     aesop
@@ -162,39 +166,60 @@ theorem hoareWhile(Q: Cond)(cond: Cond)(body: Program):
   intro sStart sFin
   intro preCond
   intro trans
-  generalize hprog: (Program.whilee cond body) = prog
-  rw [hprog] at trans
-  rw [evalC]
-  simp
+  simp [evalC]
   apply And.intro
   {
-    apply gh prog Q
-    exists cond
-    exists body
-    apply And.intro
-    rw [Eq.comm]
-    apply hprog
-    apply hoareBody
+    apply transInv (Program.whilee cond body) Q _ sStart sFin
     apply trans
     apply preCond
+    exists cond
+    exists body
   }
   {
-    rw [evalC]
-    simp
+    clear Q hoareBody preCond
+    generalize progEq: (Program.whilee cond body) = prog
+    rw [progEq] at trans
+    rw [Eq.comm] at progEq
+    revert progEq
+    revert cond body
     induction trans with
-    | while_true =>
-      aesop
-    | while_false =>
-      aesop
+    | while_true cond body s1 s2 s3 condVal tr1 tr2 ih1 ih2 =>
+      clear sStart sFin tr1 ih1
+      intro c b
+      intro eq
+      simp at eq
+      apply ih2 c b
+      simp
+      apply eq
+    | while_false cond body s condVal =>
+      clear sStart sFin prog
+      simp at condVal
+      intro c b
+      intro eq
+      simp at eq
+      have eq2: c=cond := by
+        aesop
+      rw [eq2]
+      apply condVal
     | skip =>
+      intro c b st
+      apply False.elim
       aesop
     | assign =>
+      intro c b st
+      apply False.elim
       aesop
     | seq =>
+      intro c b st
+      apply False.elim
       aesop
     | if_true =>
+      intro c b st
+      apply False.elim
       aesop
     | if_false =>
+      intro c b st
+      apply False.elim
       aesop
   }
 
