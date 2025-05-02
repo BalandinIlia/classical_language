@@ -94,6 +94,67 @@ theorem hoareIf(P Q: Cond)(cond: Cond)(pt pf: Program):
     apply preCond
     apply transf
 
+lemma gh (prog: Program)(Q: Cond)
+  (razl: ∃c:Cond, ∃b:Program, prog = Program.whilee c b ∧ hoare Q b Q):
+  ∀sStart sFin: State, (BSOS sStart prog sFin) → (evalC Q sStart = true) → (evalC Q sFin = true) := by
+  intro sStart sFin
+  intro trans
+  revert razl
+
+  induction trans with
+  | while_true cond body s1 s2 s3 valCond tr1 tr2 ih1 ih2 =>
+    clear prog
+    clear sStart sFin
+    clear ih1 tr2
+
+    intro razl
+    let ⟨c, b, hoareBody⟩ := razl
+    have eq1: c = cond := by
+      aesop
+    have eq2: b = body := by
+      aesop
+    rw [eq1, eq2] at hoareBody
+    simp at hoareBody
+    clear razl c b eq1 eq2
+
+    intro preCond
+    apply ih2
+    {
+      exists cond
+      exists body
+    }
+    {
+      apply hoareBody s1 s2
+      apply preCond
+      apply tr1
+    }
+  | while_false =>
+      simp
+  | skip s =>
+    clear prog sStart sFin
+    intro razl
+    apply False.elim
+    clear s
+    aesop
+  | assign a b c =>
+    clear prog sStart sFin
+    intro razl
+    apply False.elim
+    clear c
+    aesop
+  | seq =>
+    intro razl
+    apply False.elim
+    aesop
+  | if_true =>
+    intro razl
+    apply False.elim
+    aesop
+  | if_false =>
+    intro razl
+    apply False.elim
+    aesop
+
 theorem hoareWhile(Q: Cond)(cond: Cond)(body: Program):
   hoare Q body Q → hoare Q (Program.whilee cond body) (Cond.and Q (Cond.not cond)) := by
   intro hoareBody
@@ -107,49 +168,14 @@ theorem hoareWhile(Q: Cond)(cond: Cond)(body: Program):
   simp
   apply And.intro
   {
-    have df: (prog = Program.whilee cond body) → (hoare Q body Q) → (evalC Q sStart = true) → (evalC Q sFin = true) := by
-      induction trans with
-      | while_true iCond iBody s1 s2 s3 valICond tr1 tr2 ih1 ih2 =>
-        intro h1 h2 h3
-        rw [h1] at hprog
-        have eq: body = iBody := by
-          aesop
-        apply ih2
-        apply hoareBody
-        apply h3
-        rw [eq]
-        apply tr1
-        rw [Eq.comm]
-        apply h1
-        apply h1
-        apply hoareBody
-        apply hoareBody s1 s2
-        apply preCond
-        have eq2: iBody = body := by
-          rw [Eq.comm]
-          apply eq
-        rw [eq]
-        apply tr1
-      | while_false iCond iBody s1 s2 =>
-        intro h1 h2 h3
-        apply h3
-      | skip =>
-        aesop
-      | assign =>
-        aesop
-      | seq p1 p2 s1 s2 s3 tr1 tr2 ih1 ih2 =>
-        apply False.elim
-        aesop
-      | if_true =>
-        apply False.elim
-        aesop
-      | if_false =>
-        apply False.elim
-        aesop
-    apply df
+    apply gh prog Q
+    exists cond
+    exists body
+    apply And.intro
     rw [Eq.comm]
     apply hprog
     apply hoareBody
+    apply trans
     apply preCond
   }
   {
