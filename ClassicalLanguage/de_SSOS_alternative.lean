@@ -3,21 +3,30 @@ import Aesop
 import ClassicalLanguage.de_basic
 import ClassicalLanguage.de_BSOS
 
--- SS means small step: program 2 can be got from program 1 in one small step
-inductive SS: Program → Program → Prop
-| assign(n: String)(expr: Expr): SS (Program.assign n expr) Program.skip
-| if_true(c:Cond)(pt pf: Program): SS (Program.iff c pt pf) pt
-| if_false(c:Cond)(pt pf: Program): SS (Program.iff c pt pf) pf
-| seqSkip(p: Program): SS (Program.seq Program.skip p) p
-| seq(p1s p1f p2: Program): SS (Program.seq p1s p2) (Program.seq p1f p2)
-| while_true(c: Cond)(b: Program): SS (Program.whilee c b) (Program.seq b (Program.whilee c b))
-| while_false(c: Cond)(b: Program): SS (Program.whilee c b) Program.skip
+-- execu means execution:
+-- program 2 can be got from program 1 in one small execution step
+inductive execu: Program → Program → Prop
+| assign(n: String)(expr: Expr):
+    execu (Program.assign n expr) Program.skip
+| if_true(c:Cond)(pt pf: Program):
+    execu (Program.iff c pt pf) pt
+| if_false(c:Cond)(pt pf: Program):
+    execu (Program.iff c pt pf) pf
+| seqSkip(p: Program):
+    execu (Program.seq Program.skip p) p
+| seq(p1s p1f p2: Program):
+    execu p1s p1f →
+    execu (Program.seq p1s p2) (Program.seq p1f p2)
+| while_true(c: Cond)(b: Program):
+    execu (Program.whilee c b) (Program.seq b (Program.whilee c b))
+| while_false(c: Cond)(b: Program):
+    execu (Program.whilee c b) Program.skip
 
 -- true if state1 program1 can be transformed to state2 program2
 def aSSOS(state1: State)(program1: Program)
          (state2: State)(program2: Program): Prop :=
          (∀sFin:State, BSOS state1 program1 sFin ↔ BSOS state2 program2 sFin) ∧
-         (SS program1 program2)
+         (execu program1 program2)
 
 theorem aSSOS_assign (st: State)(name: String)(expr: Expr):
   aSSOS st (Program.assign name expr) (replS st name (evalE expr st)) Program.skip := by
@@ -37,7 +46,7 @@ theorem aSSOS_assign (st: State)(name: String)(expr: Expr):
       apply BSOS.assign
     }
   }
-  apply SS.assign
+  apply execu.assign
 
 theorem aSSOS_seq (st1 st2: State)(p1s p1f p2: Program):
   aSSOS st1 p1s st2 p1f →
@@ -77,7 +86,7 @@ theorem aSSOS_seq (st1 st2: State)(p1s p1f p2: Program):
       apply tr2
     }
   }
-  apply SS.seq
+  apply execu.seq
 
 theorem aSSOS_seq_skip (st: State)(prog: Program):
   aSSOS st (Program.seq Program.skip prog) st prog := by
@@ -100,7 +109,7 @@ theorem aSSOS_seq_skip (st: State)(prog: Program):
       apply bsos1
     }
   }
-  apply SS.seqSkip
+  apply execu.seqSkip
 
 theorem aSSOS_if_true (st: State)(cond: Cond)(pt pf: Program):
   evalC cond st = true →
@@ -127,7 +136,7 @@ theorem aSSOS_if_true (st: State)(cond: Cond)(pt pf: Program):
       apply bsos1
     }
   }
-  apply SS.if_true
+  apply execu.if_true
 
 theorem aSSOS_if_false (st: State)(cond: Cond)(pt pf: Program):
   evalC cond st = false →
@@ -155,14 +164,76 @@ theorem aSSOS_if_false (st: State)(cond: Cond)(pt pf: Program):
       apply bsos1
     }
   }
-  apply SS.if_false
+  apply execu.if_false
 
+theorem aSSOS_while_true (st: State)(cond: Cond)(body: Program):
+  evalC cond st = true →
+  aSSOS st (Program.whilee cond body) st (Program.seq body (Program.whilee cond body)) := by
+  intro condVal
+  rw[aSSOS]
+  apply And.intro
+  {
+    intro sFin
+    apply Iff.intro
+    {
+      intro trans
+      cases trans
+      case while_true sInter tmp tr1 tr2 =>
+        apply BSOS.seq body (Program.whilee cond body) st sInter
+        apply tr1
+        apply tr2
+      case while_false =>
+        apply False.elim
+        aesop
+    }
+    {
+      intro trans
+      cases trans
+      case seq sInter tr1 tr2 =>
+        apply BSOS.while_true cond body st sInter sFin
+        apply condVal
+        apply tr1
+        apply tr2
+    }
+  }
+  apply execu.while_true
+
+theorem aSSOS_while_false (st: State)(cond: Cond)(body: Program):
+  evalC cond st = false →
+  aSSOS st (Program.whilee cond body) st Program.skip := by
+  intro condVal
+  rw[aSSOS]
+  apply And.intro
+  {
+    intro sFin
+    apply Iff.intro
+    {
+      intro trans
+      cases trans
+      case while_true sInter tmp tr1 tr2 =>
+        apply False.elim
+        aesop
+      case while_false =>
+        apply BSOS.skip
+    }
+    {
+      intro trans
+      cases trans
+      apply BSOS.while_false cond body st
+      simp
+      apply condVal
+    }
+  }
+  apply execu.while_false
+
+-- pair state-program is final
 def final(_: State)(program: Program): Prop := program = Program.skip
 
+-- pair state-program is blocked, - it allows no further transition
 def blocked(state: State)(program: Program): Prop :=
   ¬(∃s2:State, ∃p2:Program, aSSOS state program s2 p2)
 
-lemma blockerFinal(st: State)(prog: Program):
+theorem blockedFinal(st: State)(prog: Program):
   (final st prog) ↔ (blocked st prog) := by
   rw [final, blocked]
   revert st
@@ -173,9 +244,11 @@ lemma blockerFinal(st: State)(prog: Program):
     intro st2
     intro prog
     rw [aSSOS]
-    have neq:¬(SS Program.skip prog) := by
-      by_contra h
-      cases h
+    simp
+    have pr: execu Program.skip prog = false := by
+      simp
+      by_contra st
+      cases st
     aesop
   | assign name expr =>
     intro st
@@ -189,3 +262,11 @@ lemma blockerFinal(st: State)(prog: Program):
     sorry
   | whilee =>
     sorry
+
+theorem determ(st1: State)(prog1: Program)
+              (st2: State)(prog2: Program)
+              (st3: State)(prog3: Program):
+  aSSOS s1 prog1 st2 prog2 →
+  aSSOS s1 prog1 st3 prog3 →
+  (st2 = st3) ∧ (prog2 = prog3) := by
+  sorry
