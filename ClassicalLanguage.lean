@@ -6,4 +6,4 @@ import ClassicalLanguage.de_unlooping
 import ClassicalLanguage.de_termination_determenism
 import ClassicalLanguage.de_hoare
 import ClassicalLanguage.de_SSOS
-import ClassicalLanguage.de_BSOS_alternative
+import ClassicalLanguage.de_SSOS_alternative
