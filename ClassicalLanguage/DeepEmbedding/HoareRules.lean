@@ -211,8 +211,8 @@ theorem hoareWhile(Q: Cond)(cond: Cond)(body: Program):
   apply And.intro
   {
     apply transInv (Program.whilee cond body) Q _ sStart sFin
-    apply trans
     apply preCond
+    apply trans
     exists cond
     exists body
   }
