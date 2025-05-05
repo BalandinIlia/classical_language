@@ -1,7 +1,7 @@
 import Mathlib.Data.Nat.Basic
-import Aesop
 import ClassicalLanguage.State.State
 
+-- arithmetic expression
 inductive Expr
 | num: ℤ → Expr
 | var: String → Expr
@@ -9,6 +9,7 @@ inductive Expr
 | dif: Expr → Expr → Expr
 | mul: Expr → Expr → Expr
 
+-- evaluate arithmetic expression according to given state
 def evalE: Expr → State → ℤ
 | (Expr.num n), _        =>   n
 | (Expr.var s), st       =>   st s
@@ -16,6 +17,7 @@ def evalE: Expr → State → ℤ
 | (Expr.dif e1 e2), st   =>   (evalE e1 st) - (evalE e2 st)
 | (Expr.mul e1 e2), st   =>   (evalE e1 st) * (evalE e2 st)
 
+-- replace given variable with given expression inside another expression
 def replE: Expr → String → Expr → Expr
 | (Expr.num n), _, _             =>   Expr.num n
 | (Expr.var s), name, eSub       =>   if (s==name) then eSub else (Expr.var s)
@@ -23,6 +25,7 @@ def replE: Expr → String → Expr → Expr
 | (Expr.dif e1 e2), name, eSub   =>   Expr.dif (replE e1 name eSub) (replE e2 name eSub)
 | (Expr.mul e1 e2), name, eSub   =>   Expr.mul (replE e1 name eSub) (replE e2 name eSub)
 
+-- Replacement in an expression is the same as replacement in a state
 lemma exprReplacement(expr: Expr)(name: String)(eSub: Expr):
   ∀s:State, (evalE (replE expr name eSub) s) = (evalE expr (replS s name (evalE eSub s))) := by
   intro s
@@ -33,12 +36,11 @@ lemma exprReplacement(expr: Expr)(name: String)(eSub: Expr):
     simp [evalE, replE, replS]
     cases eq : (name2==name)
     case true =>
-      aesop
+      simp at eq
+      simp [eq]
     case false =>
-      have neq:¬(name2 = name) := by
-        aesop
-      simp [neq]
-      simp [evalE]
+      simp at eq
+      simp [eq, evalE]
   | sum e1 e2 ih1 ih2 =>
     simp [evalE, replE, replS, ih1, ih2]
   | dif e1 e2 ih1 ih2 =>
