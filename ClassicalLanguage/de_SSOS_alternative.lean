@@ -87,6 +87,7 @@ theorem aSSOS_seq (st1 st2: State)(p1s p1f p2: Program):
     }
   }
   apply execu.seq
+  apply ss
 
 theorem aSSOS_seq_skip (st: State)(prog: Program):
   aSSOS st (Program.seq Program.skip prog) st prog := by
