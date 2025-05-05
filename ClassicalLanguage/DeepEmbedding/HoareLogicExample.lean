@@ -1,5 +1,4 @@
 import Mathlib.Data.Nat.Basic
-import Mathlib.Tactic.Ring.Basic
 import ClassicalLanguage.State.State
 import ClassicalLanguage.DeepEmbedding.Expression
 import ClassicalLanguage.DeepEmbedding.Condition
@@ -70,30 +69,19 @@ theorem example1(decision: Cond)(nIter: ℤ): hoare invar (cycle decision nIter)
       apply strengthPreCond invar
       {
         simp [replC, condInter, Expr.var, invar, replE, evalC, evalE, fol, State]
-        intro t1
-        intro c
-        intro t2
-        clear decision nIter condInter t2
-
-      }
-      clear condInter
-      {
+        clear nIter condInter
         intro s
-        intro neq
-        simp [decision, evalC, evalE]
-        intro c1
-        clear c1
-        generalize A: s "j" = a
-        generalize B: s "i" = b
-        simp [A, B] at neq
-        clear A B s
-        apply @Int.lt_trans a (a + 1) b
-        {
-          clear neq
-          apply @Int.lt_add_succ a 0
-        }
-        apply neq
+        intro c
+        intro t
+        clear t decision
+        generalize A: s "i" = a
+        generalize B: s "j" = b
+        simp [A, B] at c
+        clear s A B
+        apply @Int.lt_trans b (b + 1) a
+        apply @Int.lt_add_succ b 0
+        apply c
       }
-      apply hoareSkip
+      apply hoareSkip invar
     }
   }
