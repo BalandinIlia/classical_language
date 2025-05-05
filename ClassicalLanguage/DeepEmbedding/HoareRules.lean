@@ -114,10 +114,17 @@ lemma transInv(prog: Program)(Q: Cond)
 
     intro decom
     let ⟨c, b, hoareBody⟩ := decom
+    simp at hoareBody
     have eq1: c = cond := by
-      aesop
+      rw [Eq.comm]
+      apply @And.left (cond = c) (body = b)
+      apply @And.left (cond = c ∧ body = b) (hoare Q b Q)
+      apply hoareBody
     have eq2: b = body := by
-      aesop
+      rw [Eq.comm]
+      apply @And.right (cond = c) (body = b)
+      apply @And.left (cond = c ∧ body = b) (hoare Q b Q)
+      apply hoareBody
     rw [eq1, eq2] at hoareBody
     simp at hoareBody
     clear c b eq1 eq2
@@ -138,6 +145,8 @@ lemma transInv(prog: Program)(Q: Cond)
     intro razl
     apply False.elim
     clear s
+    let ⟨c, b, prop⟩ := razl
+    clear razl
     aesop
   | assign a b c =>
     intro Q
