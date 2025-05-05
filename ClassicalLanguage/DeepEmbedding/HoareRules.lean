@@ -6,12 +6,14 @@ import ClassicalLanguage.DeepEmbedding.Condition
 import ClassicalLanguage.DeepEmbedding.Program
 import ClassicalLanguage.DeepEmbedding.BigStepOperationalSemantics
 
+-- Definition of correct Hoare triple
 def hoare(P: Cond)(prog: Program)(Q: Cond): Prop :=
     ∀sStart sFin: State, evalC P sStart → BSOS sStart prog sFin → evalC Q sFin
 
-lemma strnegthPostCond (Q: Cond)(Qn: Cond)(P: Cond)(prog: Program):
-    fol Q Qn → hoare P prog Q → hoare P prog Qn := by
-  intro stronger
+-- This lemma allows to get one correct hoare triple from another by weakening postcondition
+lemma weakenPostCond (Q: Cond)(Qn: Cond)(P: Cond)(prog: Program):
+  fol Q Qn → hoare P prog Q → hoare P prog Qn := by
+  intro weaker
   intro hoare1
   rw [hoare]
   intro sStart sFin
@@ -22,22 +24,24 @@ lemma strnegthPostCond (Q: Cond)(Qn: Cond)(P: Cond)(prog: Program):
     apply preCond
     apply trans
   clear preCond trans sStart hoare1 prog P
-  apply stronger sFin
+  apply weaker sFin
   apply postCond
 
-lemma weakenPreCond (P: Cond)(Pn: Cond)(Q: Cond)(prog: Program):
+-- This lemma allows to get one correct hoare triple from another by strengthening precondition
+lemma strengthPreCond (P: Cond)(Pn: Cond)(Q: Cond)(prog: Program):
     fol Pn P → hoare P prog Q → hoare Pn prog Q := by
-    intro weaker
+    intro stronger
     intro hoare1
     rw [hoare]
     intro sStart sFin
     intro preCond
     intro trans
     apply hoare1 sStart sFin
-    apply weaker sStart
+    apply stronger sStart
     apply preCond
     apply trans
 
+-- hoare rule for skip construction
 theorem hoareSkip(P: Cond): hoare P Program.skip P := by
   rw [hoare]
   intro sStart sFin
@@ -49,25 +53,28 @@ theorem hoareSkip(P: Cond): hoare P Program.skip P := by
   simp [eq]
   apply preCond
 
+-- hoare rule for assign
 theorem hoareAssign(name: String)(expr: Expr)(Q: Cond):
   hoare (replC Q name expr) (Program.assign name expr) Q := by
   rw [hoare]
   intro sStart sFin
-  rw [condReplacement]
   intro precond
   intro trans
+  rw [condReplacement] at precond
   cases trans
   case assign =>
     apply precond
 
+-- hoare rule for sequence
 theorem hoareSeq(P R Q: Cond)(p1 p2: Program):
-  ((hoare P p1 R) → (hoare R p2 Q) → (hoare P (Program.seq p1 p2) Q)) := by
+  hoare P p1 R →
+  hoare R p2 Q →
+  hoare P (Program.seq p1 p2) Q := by
   intro hoare1
   intro hoare2
 
   rw [hoare]
-  intro sStart
-  intro sFin
+  intro sStart sFin
   intro preCond
   intro trans
 
@@ -79,22 +86,40 @@ theorem hoareSeq(P R Q: Cond)(p1 p2: Program):
     apply trans1
     apply trans2
 
+-- hoare rule for if
+-- pt = "program true", - program which executes if condition is true
+-- pf = "program false", - program which executes if condition is false
 theorem hoareIf(P Q: Cond)(cond: Cond)(pt pf: Program):
-  hoare P pt Q → hoare P pf Q → hoare P (Program.iff cond pt pf) Q := by
-  intro hoaret
-  intro hoaref
+  hoare (Cond.and P cond) pt Q →
+  hoare (Cond.and P (Cond.not cond)) pf Q →
+  hoare P (Program.iff cond pt pf) Q := by
+  intro hoareT
+  intro hoareF
   rw [hoare]
   intro sStart sFin
   intro preCond
   intro trans
   cases trans
   case if_true condVal transt =>
-    apply hoaret sStart
-    apply preCond
+    clear hoareF pf
+    apply hoareT sStart sFin
+    {
+      simp [evalC]
+      apply And.intro
+      apply preCond
+      apply condVal
+    }
     apply transt
   case if_false condVal transf =>
-    apply hoaref sStart
-    apply preCond
+    clear hoareT pt
+    apply hoareF sStart sFin
+    {
+      simp [evalC]
+      apply And.intro
+      apply preCond
+      simp at condVal
+      apply condVal
+    }
     apply transf
 
 lemma transInv(prog: Program)(Q: Cond)

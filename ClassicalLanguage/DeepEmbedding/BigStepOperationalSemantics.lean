@@ -11,6 +11,7 @@ inductive BSOS: State → Program → State → Prop
       BSOS s Program.skip s
 | assign(name: String)(expr: Expr)(s:State):
       BSOS s (Program.assign name expr) (replS s name (evalE expr s))
+-- seq stays for "sequence"
 | seq(p1 p2: Program)(s1 s2 s3: State):
       BSOS s1 p1 s2 →
       BSOS s2 p2 s3 →
