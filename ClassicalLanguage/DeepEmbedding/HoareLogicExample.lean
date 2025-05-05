@@ -1,5 +1,5 @@
 import Mathlib.Data.Nat.Basic
-import Aesop
+import Mathlib.Tactic.Ring.Basic
 import ClassicalLanguage.State.State
 import ClassicalLanguage.DeepEmbedding.Expression
 import ClassicalLanguage.DeepEmbedding.Condition
@@ -7,60 +7,75 @@ import ClassicalLanguage.DeepEmbedding.Program
 import ClassicalLanguage.DeepEmbedding.BigStepOperationalSemantics
 import ClassicalLanguage.DeepEmbedding.HoareRules
 
-def increm(name: String): Program := Program.assign name (Expr.sum (Expr.var name) (Expr.num 1))
+-- expression which increments given variable
+def incremExpr(name: String): Expr := Expr.sum (Expr.var name) (Expr.num 1)
 
-def decision(name: String): Cond := Cond.less (Expr.var name) (Expr.num 50)
+-- program which increments given variable
+def incremProg(name: String): Program := Program.assign name (incremExpr name)
 
-def less100(name: String): Cond := Cond.less (Expr.var name) (Expr.num 100)
+-- condition that given variable is less then l
+def less(name: String)(l: ℤ): Cond := Cond.less (Expr.var name) (Expr.num l)
 
-def cycle: Program :=
-Program.whilee (less100 "i")
+def cycle(decision: Cond)(nIter: ℤ): Program :=
+Program.whilee (less "i" nIter)
                (Program.seq
-                          (increm "i")
+                          (incremProg "i")
                           (Program.iff
-                                      (decision "i")
-                                      (increm "j")
+                                      decision
+                                      (incremProg "j")
                                       Program.skip
                           )
-
                )
 
 def invar:Cond := Cond.less (Expr.var "j") (Expr.var "i")
 
-theorem example1: hoare invar cycle invar := by
-  apply weakenPostCond (Cond.and invar (Cond.not (less100 "i")))
+theorem example1(decision: Cond)(nIter: ℤ): hoare invar (cycle decision nIter) invar := by
+  apply weakenPostCond (Cond.and invar (Cond.not (less "i" nIter)))
   {
-    simp [fol, evalC, invar, evalE, less100, State]
-    intro s
+    simp [fol, evalC, invar, evalE, less, State]
+    intro _
     intro c1
-    intro c2
+    intro _
     apply c1
   }
   apply hoareWhile
 
+  -- intermediate condition (for seq rule)
   let condInter:Cond := Cond.less (Expr.sum (Expr.var "j") (Expr.num 1)) (Expr.var "i")
-
   apply hoareSeq invar condInter invar
+
   {
-    apply strengthPreCond (replC condInter "i" (Expr.sum (Expr.var "i") (Expr.num 1)))
-    simp [replC, condInter, Expr.var, invar, replE, evalC, evalE, fol]
+    apply strengthPreCond (replC condInter "i" (incremExpr "i"))
+    simp [replC, condInter, Expr.var, invar, replE, evalC, evalE, fol, incremExpr]
     apply hoareAssign "i" (Expr.sum (Expr.var "i") (Expr.num 1)) condInter
   }
   {
     apply hoareIf
     {
-      apply strengthPreCond (replC invar "j" (Expr.sum (Expr.var "j") (Expr.num 1)))
-      simp [fol, evalC, replC, condInter, evalE, invar, replE, decision]
-      clear condInter
-      intro s
-      intro c1
-      intro c2
-      apply c1
-      apply hoareAssign
+      apply strengthPreCond (replC invar "j" (incremExpr "j"))
+      {
+        simp [fol, evalC, replC, condInter, evalE, invar, replE, incremExpr]
+        clear nIter condInter
+        intro _
+        intro c
+        intro _
+        apply c
+      }
+      {
+        clear condInter decision
+        apply hoareAssign
+      }
     }
     {
       apply strengthPreCond invar
-      simp [replC, condInter, Expr.var, invar, replE, evalC, evalE, fol, State]
+      {
+        simp [replC, condInter, Expr.var, invar, replE, evalC, evalE, fol, State]
+        intro t1
+        intro c
+        intro t2
+        clear decision nIter condInter t2
+
+      }
       clear condInter
       {
         intro s
