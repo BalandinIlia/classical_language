@@ -1,9 +1,11 @@
-import Mathlib.Data.Nat.Basic
 import ClassicalLanguage.State.State
 import ClassicalLanguage.DeepEmbedding.Expression
 import ClassicalLanguage.DeepEmbedding.Condition
 import ClassicalLanguage.DeepEmbedding.Program
 
+-- BSOS is an abbreviation: Big Step Operational Semantics
+-- BSOS s1 p s2 means that execution of program p in state s1 can result in state s2.
+-- However, in our case (determenistic language) it means that it results in s2.
 inductive BSOS: State → Program → State → Prop
 | skip(s:State):
       BSOS s Program.skip s

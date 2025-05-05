@@ -1,4 +1,3 @@
-import Mathlib.Data.Nat.Basic
 import ClassicalLanguage.DeepEmbedding.Expression
 import ClassicalLanguage.DeepEmbedding.Condition
 
