@@ -1,5 +1,4 @@
 import Mathlib.Data.Nat.Basic
-import Aesop
 import ClassicalLanguage.State.State
 import ClassicalLanguage.DeepEmbedding.Expression
 import ClassicalLanguage.DeepEmbedding.Condition
@@ -161,44 +160,51 @@ lemma transInv(prog: Program)(Q: Cond)
     intro preCond
     apply ih2
     apply decom
-    {
-      apply hoareBody s1 s2
-      apply preCond
-      apply tr1
-    }
+    apply hoareBody s1 s2
+    apply preCond
+    apply tr1
   | while_false =>
     simp
-  | skip s =>
-    intro Q
+  | skip _ =>
     clear prog sStart sFin
-    intro razl
-    apply False.elim
-    clear s
-    let ⟨c, b, prop⟩ := razl
-    clear razl
-    aesop
-  | assign a b c =>
     intro Q
-    clear prog sStart sFin
-    intro razl
+    intro decom
     apply False.elim
-    clear c
-    aesop
+    let ⟨c, b, prop⟩ := decom
+    clear decom
+    nomatch prop
+  | assign _ _ _ =>
+    clear prog sStart sFin
+    intro Q
+    intro decom
+    apply False.elim
+    let ⟨c, b, prop⟩ := decom
+    clear decom
+    nomatch prop
   | seq =>
+    clear prog sStart sFin
     intro Q
-    intro razl
+    intro decom
     apply False.elim
-    aesop
+    let ⟨c, b, prop⟩ := decom
+    clear decom
+    nomatch prop
   | if_true =>
+    clear prog sStart sFin
     intro Q
-    intro razl
+    intro decom
     apply False.elim
-    aesop
+    let ⟨c, b, prop⟩ := decom
+    clear decom
+    nomatch prop
   | if_false =>
+    clear prog sStart sFin
     intro Q
-    intro razl
+    intro decom
     apply False.elim
-    aesop
+    let ⟨c, b, prop⟩ := decom
+    clear decom
+    nomatch prop
 
 theorem hoareWhile(Q: Cond)(cond: Cond)(body: Program):
   hoare Q body Q → hoare Q (Program.whilee cond body) (Cond.and Q (Cond.not cond)) := by
@@ -239,27 +245,31 @@ theorem hoareWhile(Q: Cond)(cond: Cond)(body: Program):
       intro eq
       simp at eq
       have eq2: c=cond := by
-        aesop
+        clear s condVal
+        rw [Eq.comm]
+        apply And.left
+        apply eq
       rw [eq2]
       apply condVal
     | skip =>
       intro c b st
+      clear sStart sFin prog
       apply False.elim
-      aesop
+      nomatch st
     | assign =>
       intro c b st
       apply False.elim
-      aesop
+      nomatch st
     | seq =>
       intro c b st
       apply False.elim
-      aesop
+      nomatch st
     | if_true =>
       intro c b st
       apply False.elim
-      aesop
+      nomatch st
     | if_false =>
       intro c b st
       apply False.elim
-      aesop
+      nomatch st
   }
