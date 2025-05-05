@@ -1,10 +1,6 @@
 import Mathlib.Data.Nat.Basic
 import Aesop
-
-def State := String → ℤ
-
-def replS: State → String → ℤ → State
-| st, name, val => (fun s:String => if(s==name) then val else st s)
+import ClassicalLanguage.State.State
 
 inductive Expr
 | num: ℤ → Expr

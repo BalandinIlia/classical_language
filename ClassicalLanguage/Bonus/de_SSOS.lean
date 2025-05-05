@@ -1,5 +1,6 @@
 import Mathlib.Data.Nat.Basic
 import Aesop
+import ClassicalLanguage.State.State
 import ClassicalLanguage.DeepEmbedding.de_basic
 
 inductive SSOS: State → Program → State → Program → Prop
