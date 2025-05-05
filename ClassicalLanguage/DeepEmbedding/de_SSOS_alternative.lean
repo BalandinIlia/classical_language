@@ -1,7 +1,7 @@
 import Mathlib.Data.Nat.Basic
 import Aesop
-import ClassicalLanguage.de_basic
-import ClassicalLanguage.de_BSOS
+import ClassicalLanguage.DeepEmbedding.de_basic
+import ClassicalLanguage.DeepEmbedding.de_BSOS
 
 -- execu means execution:
 -- program 2 can be got from program 1 in one small execution step

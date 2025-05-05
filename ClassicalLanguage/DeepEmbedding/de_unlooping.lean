@@ -1,7 +1,7 @@
 import Mathlib.Data.Nat.Basic
 import Aesop
-import ClassicalLanguage.de_basic
-import ClassicalLanguage.de_BSOS
+import ClassicalLanguage.DeepEmbedding.de_basic
+import ClassicalLanguage.DeepEmbedding.de_BSOS
 
 def noLoop: Program → Prop
 | Program.skip          =>   true

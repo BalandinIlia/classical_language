@@ -1,7 +1,7 @@
 import Mathlib.Data.Nat.Basic
 import Aesop
-import ClassicalLanguage.de_basic
-import ClassicalLanguage.de_BSOS
+import ClassicalLanguage.DeepEmbedding.de_basic
+import ClassicalLanguage.DeepEmbedding.de_BSOS
 
 def hoare(P: Cond)(prog: Program)(Q: Cond): Prop :=
     ∀sStart sFin: State, evalC P sStart → BSOS sStart prog sFin → evalC Q sFin

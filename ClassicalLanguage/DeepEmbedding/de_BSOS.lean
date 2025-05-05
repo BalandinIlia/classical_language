@@ -1,6 +1,6 @@
 import Mathlib.Data.Nat.Basic
 import Aesop
-import ClassicalLanguage.de_basic
+import ClassicalLanguage.DeepEmbedding.de_basic
 
 inductive BSOS: State → Program → State → Prop
 | skip(s:State):

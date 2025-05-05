@@ -1,8 +1,8 @@
 import Mathlib.Data.Nat.Basic
 import Aesop
-import ClassicalLanguage.de_basic
-import ClassicalLanguage.de_BSOS
-import ClassicalLanguage.de_unlooping
+import ClassicalLanguage.DeepEmbedding.de_basic
+import ClassicalLanguage.DeepEmbedding.de_BSOS
+import ClassicalLanguage.DeepEmbedding.de_unlooping
 
 theorem determenistic(prog: Program):
   ∀sStart sFin1 sFin2:State, (noLoop prog) → (BSOS sStart prog sFin1) → (BSOS sStart prog sFin2) → (sFin1 = sFin2) := by
