@@ -122,11 +122,15 @@ theorem hoareIf(P Q: Cond)(cond: Cond)(pt pf: Program):
     }
     apply transf
 
+-- Lemma that cycle invariant is preserved in cycle if it is preserved in cycle body
 lemma transInv(prog: Program)(Q: Cond)
   (decom: ∃c:Cond, ∃b:Program, prog = Program.whilee c b ∧ hoare Q b Q):
-  ∀sStart sFin: State, (BSOS sStart prog sFin) → (evalC Q sStart = true) → (evalC Q sFin = true) := by
+  hoare Q prog Q := by
+  rw[hoare]
   intro sStart sFin
+  intro pre
   intro trans
+  revert pre
   revert decom
   revert Q
 
