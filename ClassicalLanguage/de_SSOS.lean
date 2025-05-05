@@ -93,7 +93,16 @@ theorem th1: results exampl (stateAB 1 1) := by
       apply TransClos.oneStep
       apply TransS.right
       have repl2: stateAB 1 1 = replS (stateAB 1 0) "b" 1 := by
+            clear conf1 conf2 conf3 conf4
             simp [replS, stateAB]
+            funext s
+            cases eq: s=="a"
+            case true =>
+                  simp at eq
+                  simp [eq]
+            case false =>
+                  simp at eq
+                  simp [eq]
       rw [repl2]
       clear repl2
       apply SSOS.assign
