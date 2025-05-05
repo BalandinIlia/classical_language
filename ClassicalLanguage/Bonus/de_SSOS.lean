@@ -1,7 +1,9 @@
 import Mathlib.Data.Nat.Basic
 import Aesop
 import ClassicalLanguage.State.State
-import ClassicalLanguage.DeepEmbedding.de_basic
+import ClassicalLanguage.DeepEmbedding.Expression
+import ClassicalLanguage.DeepEmbedding.Condition
+import ClassicalLanguage.DeepEmbedding.Program
 
 inductive SSOS: State → Program → State → Program → Prop
 | skip         (s: State):

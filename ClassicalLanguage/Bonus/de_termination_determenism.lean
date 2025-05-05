@@ -1,8 +1,9 @@
 import Mathlib.Data.Nat.Basic
 import Aesop
 import ClassicalLanguage.State.State
-import ClassicalLanguage.DeepEmbedding.de_basic
-import ClassicalLanguage.DeepEmbedding.de_BSOS
+import ClassicalLanguage.DeepEmbedding.Expression
+import ClassicalLanguage.DeepEmbedding.Condition
+import ClassicalLanguage.DeepEmbedding.BigStepOperationalSemantics
 import ClassicalLanguage.Bonus.de_unlooping
 
 theorem determenistic(prog: Program):
