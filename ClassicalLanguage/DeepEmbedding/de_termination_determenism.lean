@@ -3,7 +3,7 @@ import Aesop
 import ClassicalLanguage.State.State
 import ClassicalLanguage.DeepEmbedding.de_basic
 import ClassicalLanguage.DeepEmbedding.de_BSOS
-import ClassicalLanguage.DeepEmbedding.de_unlooping
+import ClassicalLanguage.Bonus.de_unlooping
 
 theorem determenistic(prog: Program):
   ∀sStart sFin1 sFin2:State, (noLoop prog) → (BSOS sStart prog sFin1) → (BSOS sStart prog sFin2) → (sFin1 = sFin2) := by
