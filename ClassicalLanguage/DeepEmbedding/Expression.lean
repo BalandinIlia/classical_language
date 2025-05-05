@@ -1,5 +1,4 @@
 import Mathlib.Data.Nat.Basic
-import Aesop
 import ClassicalLanguage.State.State
 
 inductive Expr
@@ -33,12 +32,11 @@ lemma exprReplacement(expr: Expr)(name: String)(eSub: Expr):
     simp [evalE, replE, replS]
     cases eq : (name2==name)
     case true =>
-      aesop
+      simp at eq
+      simp [eq]
     case false =>
-      have neq:¬(name2 = name) := by
-        aesop
-      simp [neq]
-      simp [evalE]
+      simp at eq
+      simp [eq, evalE]
   | sum e1 e2 ih1 ih2 =>
     simp [evalE, replE, replS, ih1, ih2]
   | dif e1 e2 ih1 ih2 =>
