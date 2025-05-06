@@ -20,5 +20,3 @@ import ClassicalLanguage.ShallowEmbedding.HoareLogicExample
 import ClassicalLanguage.Bonus.SmallStepSemantics
 import ClassicalLanguage.Bonus.SmallStepSemanticsAlternative
 import ClassicalLanguage.Bonus.TerminationDetermenizm
-
-import Mathlib
