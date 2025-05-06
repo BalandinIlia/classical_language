@@ -7,7 +7,7 @@ import ClassicalLanguage.ShallowEmbedding.BigStepOperationalSemantics
 
 -- Definition of correct Hoare triple
 def hoare(P: Cond)(prog: Program)(Q: Cond): Prop :=
-    ∀sStart sFin: State, evalC P sStart → BSOS sStart prog sFin → evalC Q sFin
+    ∀sStart sFin: State, P sStart → BSOS sStart prog sFin → Q sFin
 
 -- This lemma allows to get one correct hoare triple from another by weakening postcondition
 lemma weakenPostCond (Q: Cond)(Qn: Cond)(P: Cond)(prog: Program):
