@@ -116,7 +116,108 @@ theorem ifRule(cond: Cond)(pt pf: Program):
     }
   aesop
 
-def examp:Program :=
+def pow: Program → Nat → Set Transition
+| _, 0          => DS Program.skip
+| p, Nat.succ n => comp (DS p) (pow p n)
+
+theorem whileRule(cond: Cond)(body: Program):
+  DS (Program.whilee cond body) = {tr: Transition |
+  ¬(evalC cond tr.sFin) ∧ (∃n:ℕ, tr∈(pow body n))} := by
+  rw [DS]
+  have eq(tr: Transition):
+    BSOS tr.sSt (Program.whilee cond body) tr.sFin ↔
+    ¬(evalC cond tr.sFin = true) ∧ (∃n:ℕ, tr∈ (pow body n)) := by
+    apply Iff.intro
+    {
+      intro trans
+      generalize eq: Program.whilee cond body = prog
+      generalize eq1: tr.sSt = s1
+      generalize eq2: tr.sFin = s2
+      rw [eq, eq1, eq2] at trans
+      rw [Eq.comm] at eq
+      revert eq2 eq eq1 tr cond body
+      induction trans with
+      | while_true iCond iBody s3 s4 s5 condVal tr1 tr2 ih1 ih2 =>
+        intro cond body tr eq eq1 eq2
+        simp at eq
+        simp [eq] at condVal ih1 ih2 tr1 tr2
+        simp
+        apply And.intro
+        {
+          apply And.left
+          apply ih2 cond body (Transition.mk s4 s5)
+          simp
+          simp
+          simp
+          simp
+        }
+        {
+          have tmp: ∃ n, (Transition.mk s4 s5) ∈ pow body n := by
+            aesop
+          let ⟨nn, prop⟩ := tmp
+          exists nn+1
+          clear eq ih1 tmp tr2 ih2 condVal iCond iBody s1 s2
+          rw [pow]
+          simp [comp]
+          exists s4
+          apply And.intro
+          simp [eq1]
+          rw [DS]
+          aesop
+          rw [eq2]
+          apply prop
+        }
+      | while_false iCond iBody ss condVal =>
+        intro cond body tr eq eq1 eq2
+        simp at eq
+        simp [eq] at condVal
+        simp
+        apply And.intro
+        apply condVal
+        exists 0
+        simp [pow]
+        rw [skipRule]
+        aesop
+      | seq =>
+        intro cond body tr eq eq1 eq2
+        aesop
+      | skip =>
+        intro cond body tr eq eq1 eq2
+        aesop
+      | assign =>
+        intro cond body tr eq eq1 eq2
+        aesop
+      | if_true =>
+        intro cond body tr eq eq1 eq2
+        aesop
+      | if_false =>
+        intro cond body tr eq eq1 eq2
+        aesop
+    }
+    {
+      sorry
+    }
+  simp [eq]
+
+def examp1:Program :=
 Program.iff (Cond.less (Expr.var "a") (Expr.num 0))
             (Program.assign "b" (Expr.num (-1)))
             (Program.assign "b" (Expr.num 1))
+
+def examp2:Program :=
+Program.iff (Cond.not (Cond.less (Expr.var "a") (Expr.num 0)))
+            (Program.assign "b" (Expr.num 1))
+            (Program.assign "b" (Expr.num (-1)))
+
+theorem th: DS examp1 = DS examp2 := by
+  simp [examp1, examp2]
+  rw [ifRule]
+  rw [ifRule]
+  rw [filter]
+  rw [filter]
+  rw [filter]
+  rw [filter]
+  rw [assignRule]
+  rw [assignRule]
+  simp [replS, evalC, evalE, State, Transition, Set.union_def]
+  aesop
