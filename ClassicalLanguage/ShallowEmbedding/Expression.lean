@@ -1,4 +1,4 @@
-import Mathlib.Data.Nat.Basic
+import Mathlib.Data.Int.Basic
 import ClassicalLanguage.State.State
 
 -- arithmetic expression
