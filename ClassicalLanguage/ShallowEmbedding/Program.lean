@@ -1,7 +1,7 @@
-import ClassicalLanguage.DeepEmbedding.Expression
-import ClassicalLanguage.DeepEmbedding.Condition
+import ClassicalLanguage.ShallowEmbedding.Expression
+import ClassicalLanguage.ShallowEmbedding.Condition
 
-namespace DE
+namespace SE
 
 inductive Program
 | skip: Program

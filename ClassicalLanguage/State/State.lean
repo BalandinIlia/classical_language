@@ -1,4 +1,4 @@
-import Mathlib.Data.Nat.Basic
+import Mathlib.Data.Int.Basic
 
 -- Program memory state
 def State := String → ℤ

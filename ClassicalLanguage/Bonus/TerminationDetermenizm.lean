@@ -1,10 +1,18 @@
-import Mathlib.Data.Nat.Basic
+import Mathlib.Data.Int.Basic
 import Aesop
 import ClassicalLanguage.State.State
 import ClassicalLanguage.DeepEmbedding.Expression
 import ClassicalLanguage.DeepEmbedding.Condition
 import ClassicalLanguage.DeepEmbedding.BigStepOperationalSemantics
-import ClassicalLanguage.Bonus.de_unlooping
+
+open DE
+
+def noLoop: Program → Prop
+| Program.skip          =>   true
+| Program.assign _ _    =>   true
+| Program.seq p1 p2     =>   (noLoop p1) ∧ (noLoop p2)
+| Program.iff _ p1 p2   =>   (noLoop p1) ∧ (noLoop p2)
+| Program.whilee _ _    =>   false
 
 theorem determenistic(prog: Program):
   ∀sStart sFin1 sFin2:State, (noLoop prog) → (BSOS sStart prog sFin1) → (BSOS sStart prog sFin2) → (sFin1 = sFin2) := by
