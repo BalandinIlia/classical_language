@@ -1,6 +1,8 @@
 import Mathlib.Data.Int.Basic
 import ClassicalLanguage.State.State
 
+namespace SE
+
 -- logical condition
 def Cond := State → Bool
 

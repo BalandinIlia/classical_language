@@ -5,6 +5,8 @@ import ClassicalLanguage.DeepEmbedding.Expression
 import ClassicalLanguage.DeepEmbedding.Condition
 import ClassicalLanguage.DeepEmbedding.Program
 
+open DE
+
 inductive SSOS: State → Program → State → Program → Prop
 | skip         (s: State):
       SSOS s Program.skip s Program.skip

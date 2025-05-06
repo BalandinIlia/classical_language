@@ -5,6 +5,8 @@ import ClassicalLanguage.ShallowEmbedding.Condition
 import ClassicalLanguage.ShallowEmbedding.Program
 import ClassicalLanguage.ShallowEmbedding.BigStepOperationalSemantics
 
+namespace SE
+
 -- Definition of correct Hoare triple
 def hoare(P: Cond)(prog: Program)(Q: Cond): Prop :=
     ∀sStart sFin: State, P sStart → BSOS sStart prog sFin → Q sFin

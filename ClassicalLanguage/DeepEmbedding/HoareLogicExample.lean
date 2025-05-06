@@ -6,6 +6,8 @@ import ClassicalLanguage.DeepEmbedding.Program
 import ClassicalLanguage.DeepEmbedding.BigStepOperationalSemantics
 import ClassicalLanguage.DeepEmbedding.HoareRules
 
+namespace DE
+
 -- expression which increments given variable
 def incremExpr(name: String): Expr := Expr.sum (Expr.var name) (Expr.num 1)
 

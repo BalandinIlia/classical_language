@@ -5,6 +5,8 @@ import ClassicalLanguage.DeepEmbedding.Expression
 import ClassicalLanguage.DeepEmbedding.Condition
 import ClassicalLanguage.DeepEmbedding.BigStepOperationalSemantics
 
+open DE
+
 -- execu means execution:
 -- program 2 can be got from program 1 in one small execution step
 inductive execu: Program → Program → Prop

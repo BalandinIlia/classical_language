@@ -1,6 +1,8 @@
 import Mathlib.Data.Int.Basic
 import ClassicalLanguage.State.State
 
+namespace DE
+
 -- arithmetic expression
 inductive Expr
 | num: ℤ → Expr

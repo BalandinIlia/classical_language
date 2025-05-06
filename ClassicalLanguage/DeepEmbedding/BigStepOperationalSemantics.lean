@@ -3,6 +3,8 @@ import ClassicalLanguage.DeepEmbedding.Expression
 import ClassicalLanguage.DeepEmbedding.Condition
 import ClassicalLanguage.DeepEmbedding.Program
 
+namespace DE
+
 -- BSOS is an abbreviation: Big Step Operational Semantics
 -- BSOS s1 p s2 means that execution of program p in state s1 can result in state s2.
 -- However, in our case (determenistic language) it means that it results in s2.

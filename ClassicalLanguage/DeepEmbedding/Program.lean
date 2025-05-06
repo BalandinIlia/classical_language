@@ -1,6 +1,8 @@
 import ClassicalLanguage.DeepEmbedding.Expression
 import ClassicalLanguage.DeepEmbedding.Condition
 
+namespace DE
+
 inductive Program
 | skip: Program
 | assign: String → Expr → Program

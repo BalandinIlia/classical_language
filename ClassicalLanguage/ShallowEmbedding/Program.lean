@@ -1,6 +1,8 @@
 import ClassicalLanguage.ShallowEmbedding.Expression
 import ClassicalLanguage.ShallowEmbedding.Condition
 
+namespace SE
+
 inductive Program
 | skip: Program
 | assign: String → Expr → Program

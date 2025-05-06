@@ -6,6 +6,8 @@ import ClassicalLanguage.ShallowEmbedding.Program
 import ClassicalLanguage.ShallowEmbedding.BigStepOperationalSemantics
 import ClassicalLanguage.ShallowEmbedding.HoareRules
 
+namespace SE
+
 -- expression which calculates given variable incremented
 def incremExpr(name: String): Expr := (fun st:State => st name + 1)
 

@@ -2,6 +2,8 @@ import Mathlib.Data.Int.Basic
 import ClassicalLanguage.State.State
 import ClassicalLanguage.DeepEmbedding.Expression
 
+namespace DE
+
 -- logical condition
 inductive Cond
 | truee: Cond

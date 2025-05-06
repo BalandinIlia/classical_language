@@ -5,6 +5,8 @@ import ClassicalLanguage.DeepEmbedding.Expression
 import ClassicalLanguage.DeepEmbedding.Condition
 import ClassicalLanguage.DeepEmbedding.BigStepOperationalSemantics
 
+open DE
+
 def noLoop: Program → Prop
 | Program.skip          =>   true
 | Program.assign _ _    =>   true
