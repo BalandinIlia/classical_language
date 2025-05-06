@@ -6,14 +6,14 @@ import ClassicalLanguage.ShallowEmbedding.Program
 import ClassicalLanguage.ShallowEmbedding.BigStepOperationalSemantics
 import ClassicalLanguage.ShallowEmbedding.HoareRules
 
--- expression which increments given variable
-def incremExpr(name: String): Expr := Expr.sum (Expr.var name) (Expr.num 1)
+-- expression which calculates given variable incremented
+def incremExpr(name: String): Expr := (fun st:State => st name + 1)
 
 -- program which increments given variable
 def incremProg(name: String): Program := Program.assign name (incremExpr name)
 
 -- condition that given variable is less then l
-def less(name: String)(l: ℤ): Cond := Cond.less (Expr.var name) (Expr.num l)
+def less(name: String)(l: ℤ): Cond := (fun st:State => st name < l)
 
 def cycle(decision: Cond)(nIter: ℤ): Program :=
 Program.whilee (less "i" nIter)
@@ -26,12 +26,12 @@ Program.whilee (less "i" nIter)
                           )
                )
 
-def invar:Cond := Cond.less (Expr.var "j") (Expr.var "i")
+def invar:Cond := (fun st:State => st "j" < st "i")
 
 theorem example1(decision: Cond)(nIter: ℤ): hoare invar (cycle decision nIter) invar := by
-  apply weakenPostCond (Cond.and invar (Cond.not (less "i" nIter)))
+  apply weakenPostCond (CondAnd invar (CondNot (less "i" nIter)))
   {
-    simp [fol, evalC, invar, evalE, less, State]
+    simp [CondFol, CondAnd, CondNot, less, invar]
     intro _
     intro c1
     intro _
@@ -40,20 +40,20 @@ theorem example1(decision: Cond)(nIter: ℤ): hoare invar (cycle decision nIter)
   apply hoareWhile
 
   -- intermediate condition (for seq rule)
-  let condInter:Cond := Cond.less (Expr.sum (Expr.var "j") (Expr.num 1)) (Expr.var "i")
+  let condInter:Cond := (fun st:State => st "j" + 1 < st "i")
   apply hoareSeq invar condInter invar
 
   {
-    apply strengthPreCond (replC condInter "i" (incremExpr "i"))
-    simp [replC, condInter, Expr.var, invar, replE, evalC, evalE, fol, incremExpr]
-    apply hoareAssign "i" (Expr.sum (Expr.var "i") (Expr.num 1)) condInter
+    apply strengthPreCond (fun st:State => condInter (replS st "i" (incremExpr "i" st)))
+    simp [CondFol, condInter, replS, incremExpr, invar]
+    apply hoareAssign "i" (incremExpr "i") condInter
   }
   {
     apply hoareIf
     {
-      apply strengthPreCond (replC invar "j" (incremExpr "j"))
+      apply strengthPreCond (fun st:State => invar (replS st "j" (incremExpr "j" st)))
       {
-        simp [fol, evalC, replC, condInter, evalE, invar, replE, incremExpr]
+        simp [CondFol, CondAnd, condInter, incremExpr, replS, invar]
         clear nIter condInter
         intro _
         intro c
@@ -68,7 +68,7 @@ theorem example1(decision: Cond)(nIter: ℤ): hoare invar (cycle decision nIter)
     {
       apply strengthPreCond invar
       {
-        simp [replC, condInter, Expr.var, invar, replE, evalC, evalE, fol, State]
+        simp [CondFol, CondAnd, condInter, CondNot, invar, State]
         clear nIter condInter
         intro s
         intro c

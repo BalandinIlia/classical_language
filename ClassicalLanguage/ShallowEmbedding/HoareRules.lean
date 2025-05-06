@@ -11,14 +11,14 @@ def hoare(P: Cond)(prog: Program)(Q: Cond): Prop :=
 
 -- This lemma allows to get one correct hoare triple from another by weakening postcondition
 lemma weakenPostCond (Q: Cond)(Qn: Cond)(P: Cond)(prog: Program):
-  fol Q Qn → hoare P prog Q → hoare P prog Qn := by
+  CondFol Q Qn → hoare P prog Q → hoare P prog Qn := by
   intro weaker
   intro hoare1
   rw [hoare]
   intro sStart sFin
   intro preCond
   intro trans
-  have postCond: evalC Q sFin := by
+  have postCond: Q sFin := by
     apply hoare1 sStart sFin
     apply preCond
     apply trans
@@ -28,7 +28,7 @@ lemma weakenPostCond (Q: Cond)(Qn: Cond)(P: Cond)(prog: Program):
 
 -- This lemma allows to get one correct hoare triple from another by strengthening precondition
 lemma strengthPreCond (P: Cond)(Pn: Cond)(Q: Cond)(prog: Program):
-    fol Pn P → hoare P prog Q → hoare Pn prog Q := by
+    CondFol Pn P → hoare P prog Q → hoare Pn prog Q := by
     intro stronger
     intro hoare1
     rw [hoare]
@@ -54,15 +54,13 @@ theorem hoareSkip(P: Cond): hoare P Program.skip P := by
 
 -- hoare rule for assign
 theorem hoareAssign(name: String)(expr: Expr)(Q: Cond):
-  hoare (replC Q name expr) (Program.assign name expr) Q := by
+  hoare (fun st:State => Q (replS st name (expr st))) (Program.assign name expr) Q := by
   rw [hoare]
   intro sStart sFin
   intro precond
   intro trans
-  rw [condReplacement] at precond
   cases trans
-  case assign =>
-    apply precond
+  apply precond
 
 -- hoare rule for sequence
 theorem hoareSeq(P R Q: Cond)(p1 p2: Program):
@@ -89,8 +87,8 @@ theorem hoareSeq(P R Q: Cond)(p1 p2: Program):
 -- pt = "program true", - program which executes if condition is true
 -- pf = "program false", - program which executes if condition is false
 theorem hoareIf(P Q: Cond)(cond: Cond)(pt pf: Program):
-  hoare (Cond.and P cond) pt Q →
-  hoare (Cond.and P (Cond.not cond)) pf Q →
+  hoare (CondAnd P cond) pt Q →
+  hoare (CondAnd P (CondNot cond)) pf Q →
   hoare P (Program.iff cond pt pf) Q := by
   intro hoareT
   intro hoareF
@@ -103,7 +101,7 @@ theorem hoareIf(P Q: Cond)(cond: Cond)(pt pf: Program):
     clear hoareF pf
     apply hoareT sStart sFin
     {
-      simp [evalC]
+      simp [CondAnd]
       apply And.intro
       apply preCond
       apply condVal
@@ -113,7 +111,7 @@ theorem hoareIf(P Q: Cond)(cond: Cond)(pt pf: Program):
     clear hoareT pt
     apply hoareF sStart sFin
     {
-      simp [evalC]
+      simp [CondAnd, CondNot]
       apply And.intro
       apply preCond
       simp at condVal
@@ -207,13 +205,13 @@ lemma transInv(prog: Program)(Q: Cond)
     nomatch prop
 
 theorem hoareWhile(Q: Cond)(cond: Cond)(body: Program):
-  hoare Q body Q → hoare Q (Program.whilee cond body) (Cond.and Q (Cond.not cond)) := by
+  hoare Q body Q → hoare Q (Program.whilee cond body) (CondAnd Q (CondNot cond)) := by
   intro hoareBody
   rw [hoare]
   intro sStart sFin
   intro preCond
   intro trans
-  simp [evalC]
+  simp [CondAnd, CondNot]
   apply And.intro
   {
     apply transInv (Program.whilee cond body) Q _ sStart sFin
