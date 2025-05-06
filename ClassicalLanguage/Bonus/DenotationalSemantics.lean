@@ -13,9 +13,7 @@ structure Transition where
 sSt: State
 sFin: State
 
-def Rel := Set Transition
-
-def DS(prog: Program): Rel := {tr: Transition | BSOS tr.sSt prog tr.sFin}
+def DS(prog: Program): Set Transition := {tr: Transition | BSOS tr.sSt prog tr.sFin}
 
 theorem skipRule: DS Program.skip = {tr: Transition | tr.sSt = tr.sFin} := by
   rw [DS]
@@ -75,3 +73,50 @@ theorem seqRule(p1 p2: Program):
       aesop
     }
   aesop
+
+def filter(set: Set Transition)(fil: Transition → Bool) :=
+  {tr:Transition | tr∈set ∧ (fil tr = true)}
+
+theorem ifRule(cond: Cond)(pt pf: Program):
+  DS (Program.iff cond pt pf) =
+  (filter (DS pt) (fun tr:Transition => (evalC cond tr.sSt) == true))∪
+  (filter (DS pf) (fun tr:Transition => (evalC cond tr.sSt) == false)) := by
+  simp [DS, filter]
+  simp [Set.union_def]
+  have eq(s1 s2: State):
+    BSOS s1 (Program.iff cond pt pf) s2 ↔
+    (BSOS s1 pt s2 ∧ evalC cond s1 = true) ∨ (BSOS s1 pf s2 ∧ evalC cond s1 = false) := by
+    apply Iff.intro
+    {
+      intro trans
+      cases trans
+      case if_true =>
+        aesop
+      case if_false =>
+        aesop
+    }
+    {
+      intro prop
+      apply @Or.elim (BSOS s1 pt s2 ∧ evalC cond s1 = true) (BSOS s1 pf s2 ∧ evalC cond s1 = false)
+      apply prop
+      {
+        clear prop
+        intro prop
+        apply BSOS.if_true
+        aesop
+        aesop
+      }
+      {
+        clear prop
+        intro prop
+        apply BSOS.if_false
+        aesop
+        aesop
+      }
+    }
+  aesop
+
+def examp:Program :=
+Program.iff (Cond.less (Expr.var "a") (Expr.num 0))
+            (Program.assign "b" (Expr.num (-1)))
+            (Program.assign "b" (Expr.num 1))
