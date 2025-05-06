@@ -1,0 +1,77 @@
+import Mathlib.Data.Int.Basic
+import Mathlib.Data.Set.Basic
+import Aesop
+import ClassicalLanguage.State.State
+import ClassicalLanguage.DeepEmbedding.Expression
+import ClassicalLanguage.DeepEmbedding.Condition
+import ClassicalLanguage.DeepEmbedding.Program
+import ClassicalLanguage.DeepEmbedding.BigStepOperationalSemantics
+
+open DE
+
+structure Transition where
+sSt: State
+sFin: State
+
+def Rel := Set Transition
+
+def DS(prog: Program): Rel := {tr: Transition | BSOS tr.sSt prog tr.sFin}
+
+theorem skipRule: DS Program.skip = {tr: Transition | tr.sSt = tr.sFin} := by
+  rw [DS]
+  have th(s1 s2: State): BSOS s1 Program.skip s2 ↔ s1 = s2 := by
+    apply Iff.intro
+    {
+      intro trans
+      cases trans
+      simp
+    }
+    {
+      intro eq
+      rw [eq]
+      apply BSOS.skip
+    }
+  aesop
+
+theorem assignRule(name: String)(expr: Expr):
+  DS (Program.assign name expr) = {tr: Transition | tr.sFin = replS tr.sSt name (evalE expr tr.sSt)} := by
+  rw [DS]
+  have th(s1 s2: State)(name_: String)(expr_: Expr):
+    BSOS s1 (Program.assign name_ expr_) s2 ↔ s2 = replS s1 name_ (evalE expr_ s1) := by
+    clear name expr
+    apply Iff.intro
+    {
+      intro trans
+      cases trans
+      simp
+    }
+    {
+      intro eq
+      rw [eq]
+      apply BSOS.assign
+    }
+  aesop
+
+def comp(r1 r2: Set Transition):Set Transition :=
+{tr:Transition | ∃s:State, (Transition.mk tr.sSt s) ∈ r1 ∧ (Transition.mk s tr.sFin) ∈ r2}
+
+theorem seqRule(p1 p2: Program):
+  DS (Program.seq p1 p2) = comp (DS p1) (DS p2) := by
+  simp [DS, comp]
+  have eq(s1 s2: State): BSOS s1 (p1.seq p2) s2 ↔ ∃ s, BSOS s1 p1 s ∧ BSOS s p2 s2 := by
+    apply Iff.intro
+    {
+      intro trans
+      cases trans
+      case seq sInter tr1 tr2 =>
+        exists sInter
+    }
+    {
+      intro ex
+      let ⟨sInter, prop⟩ := ex
+      clear ex
+      apply BSOS.seq p1 p2 s1 sInter s2
+      aesop
+      aesop
+    }
+  aesop
