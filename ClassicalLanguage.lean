@@ -10,7 +10,12 @@ import ClassicalLanguage.DeepEmbedding.BigStepOperationalSemantics
 import ClassicalLanguage.DeepEmbedding.HoareRules
 import ClassicalLanguage.DeepEmbedding.HoareLogicExample
 
-import ClassicalLanguage.ShallowEmbedding.first
+import ClassicalLanguage.ShallowEmbedding.Expression
+import ClassicalLanguage.ShallowEmbedding.Condition
+import ClassicalLanguage.ShallowEmbedding.Program
+import ClassicalLanguage.ShallowEmbedding.BigStepOperationalSemantics
+import ClassicalLanguage.ShallowEmbedding.HoareRules
+import ClassicalLanguage.ShallowEmbedding.HoareLogicExample
 
 import ClassicalLanguage.Bonus.SmallStepSemantics
 import ClassicalLanguage.Bonus.SmallStepSemanticsAlternative
