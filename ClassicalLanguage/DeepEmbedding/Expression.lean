@@ -1,6 +1,7 @@
 import Mathlib.Data.Int.Basic
 import ClassicalLanguage.State.State
 
+-- DE means "deep embedding"
 namespace DE
 
 -- arithmetic expression

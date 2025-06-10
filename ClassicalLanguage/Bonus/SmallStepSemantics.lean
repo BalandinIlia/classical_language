@@ -7,6 +7,7 @@ import ClassicalLanguage.DeepEmbedding.Program
 
 open DE
 
+-- SSOS means "small step operational semantics"
 inductive SSOS: State → Program → State → Program → Prop
 | skip         (s: State):
       SSOS s Program.skip s Program.skip
@@ -30,6 +31,7 @@ inductive SSOS: State → Program → State → Program → Prop
         ¬(evalC cond s) →
         SSOS s (Program.whilee cond body) s Program.skip
 
+-- this is configuration of a system with two concurrently executing programs
 structure Conf where
 s: State
 p1: Program
@@ -49,6 +51,7 @@ inductive TransClos: Conf → Conf → Prop
       TransClos cInter c2 →
       TransClos c1 c2
 
+-- Proposition that given configuration may execute in given state
 def results(init: Conf)(s: State):Prop := TransClos init (Conf.mk s Program.skip Program.skip)
 
 def stateAB: ℤ → ℤ → State

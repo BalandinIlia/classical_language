@@ -3,6 +3,7 @@ import ClassicalLanguage.DeepEmbedding.Condition
 
 namespace DE
 
+-- This type represents all syntactically correct programs
 inductive Program
 | skip: Program
 | assign: String → Expr → Program

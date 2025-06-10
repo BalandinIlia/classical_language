@@ -207,7 +207,8 @@ lemma transInv(prog: Program)(Q: Cond)
     nomatch prop
 
 theorem hoareWhile(Q: Cond)(cond: Cond)(body: Program):
-  hoare Q body Q → hoare Q (Program.whilee cond body) (CondAnd Q (CondNot cond)) := by
+  hoare Q body Q →
+  hoare Q (Program.whilee cond body) (CondAnd Q (CondNot cond)) := by
   intro hoareBody
   rw [hoare]
   intro sStart sFin
