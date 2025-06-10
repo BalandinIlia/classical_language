@@ -238,40 +238,14 @@ def final(_: State)(program: Program): Prop := program = Program.skip
 def blocked(state: State)(program: Program): Prop :=
   ¬(∃s2:State, ∃p2:Program, aSSOS state program s2 p2)
 
-theorem blockedFinal(st: State)(prog: Program):
-  (final st prog) ↔ (blocked st prog) := by
-  rw [final, blocked]
-  revert st
-  induction prog with
-  | skip =>
-    intro st1
-    simp
-    intro st2
-    intro prog
-    rw [aSSOS]
-    simp
-    have pr: execu Program.skip prog = false := by
-      simp
-      by_contra st
-      cases st
-    aesop
-  | assign name expr =>
-    intro st
-    simp
-    exists replS st name (evalE expr st)
-    exists Program.skip
-    apply aSSOS_assign
-  | seq p1 p2 ih1 ih2 =>
-    sorry
-  | iff =>
-    sorry
-  | whilee =>
-    sorry
+def blockedFinal:Prop :=
+∀st: State,
+∀prog: Program,
+(final st prog) ↔ (blocked st prog)
 
-theorem determ(st1: State)(prog1: Program)
-              (st2: State)(prog2: Program)
-              (st3: State)(prog3: Program):
-  aSSOS s1 prog1 st2 prog2 →
-  aSSOS s1 prog1 st3 prog3 →
-  (st2 = st3) ∧ (prog2 = prog3) := by
-  sorry
+def determ:Prop :=
+∀st1 st2 st3: State,
+∀prog1 prog2 prog3: Program,
+aSSOS st1 prog1 st2 prog2 →
+aSSOS st1 prog1 st3 prog3 →
+((st2 = st3) ∧ (prog2 = prog3))
