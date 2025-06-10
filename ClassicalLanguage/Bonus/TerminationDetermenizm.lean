@@ -14,6 +14,7 @@ def noLoop: Program → Prop
 | Program.iff _ p1 p2   =>   (noLoop p1) ∧ (noLoop p2)
 | Program.whilee _ _    =>   false
 
+-- This theorem says that the language (without while) is determenistic
 theorem determenistic(prog: Program):
   ∀sStart sFin1 sFin2:State, (noLoop prog) → (BSOS sStart prog sFin1) → (BSOS sStart prog sFin2) → (sFin1 = sFin2) := by
   induction prog with
@@ -113,6 +114,7 @@ theorem determenistic(prog: Program):
   | whilee c body ih =>
     simp [noLoop]
 
+-- This theorem says that any program (without while) terminates
 theorem terminates(prog: Program):
   ∀sStart, (noLoop prog) → (∃sFin: State, BSOS sStart prog sFin) := by
   induction prog with

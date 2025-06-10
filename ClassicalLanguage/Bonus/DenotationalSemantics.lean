@@ -10,9 +10,12 @@ import ClassicalLanguage.DeepEmbedding.BigStepOperationalSemantics
 open DE
 
 structure Transition where
+-- sSt means "state start"
 sSt: State
+-- sFin means "state finish"
 sFin: State
 
+-- DS means "denotational semantic"
 def DS(prog: Program): Set Transition := {tr: Transition | BSOS tr.sSt prog tr.sFin}
 
 theorem skipRule: DS Program.skip = {tr: Transition | tr.sSt = tr.sFin} := by
@@ -130,6 +133,7 @@ Program.iff (Cond.not (Cond.less (Expr.var "a") (Expr.num 0)))
             (Program.assign "b" (Expr.num 1))
             (Program.assign "b" (Expr.num (-1)))
 
+-- Theorem: examp1 and examp2 are 2 equivalent programs
 theorem th: DS examp1 = DS examp2 := by
   simp [examp1, examp2]
   rw [ifRule]

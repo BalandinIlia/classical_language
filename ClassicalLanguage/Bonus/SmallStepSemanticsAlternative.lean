@@ -5,6 +5,8 @@ import ClassicalLanguage.DeepEmbedding.Expression
 import ClassicalLanguage.DeepEmbedding.Condition
 import ClassicalLanguage.DeepEmbedding.BigStepOperationalSemantics
 
+-- This file presents alternative small-step operational semantic:
+-- semantic which is not postulated but is based on big-step operational semantic
 open DE
 
 -- execu means execution:
